@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks> netcoreapp2.1; netcoreapp3.1; net45; net451; net452; net462; net472</TargetFrameworks>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Nav Malik</Authors>
+    <Description>This package will generate GraphQL classes (Type, Query, and Repository) dynamically from Domain Entity classes. Use the Configuration class and sub classes to provide the inputs to the Generator.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>GraphQL GraphQL.Code.Generator GraphQL-dotnet GraphQL.dotnet GraphQL-Schema GraphQL.Schema.Generator GraphQL.EnitityFramework GraphQLEntity GraphQL.Entity EnitityFramework.GraphQL Entity.GraphQL EntityGraphQL</PackageTags>
+    <PackageReleaseNotes>Migrated from GraphQL.Code.Generator.Net and GraphQL.Code.Generator.Core to this one pacakge. This will use Linq.Extension package rather than Linq.Extension.Net and Linq.Extension.Core. All string fileds will be nullable and all fields of views will also be nullable by default but can be changed.
+GraphQL.Code.Generator.Net last version 1.2.0.3 and GraphQL.Code.Generator.Core last version was 1.2.0.1</PackageReleaseNotes>
+    <Version>1.2.0</Version>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
+    <PackageReference Include="System.CodeDom">
+      <Version>4.7.0</Version>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <PackageReference Include="System.CodeDom">
+      <Version>4.7.0</Version>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">    
+    <PackageReference Include="System.CodeDom">
+      <Version>4.7.0</Version>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1'">
+    <PackageReference Include="System.CodeDom">
+      <Version>4.7.0</Version>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Pluralize.NET" Version="1.0.2" />
+  </ItemGroup>
+
+</Project>
