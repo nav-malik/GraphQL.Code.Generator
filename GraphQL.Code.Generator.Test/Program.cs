@@ -9,8 +9,7 @@ namespace GraphQL.Code.Generator.Test
     {
         static void Main(string[] args)
         {
-            //GetPath();
-            //return;
+            Configuration.UseDataAnnotationsToFindKeys = true;
             Configuration.ElementsToGenerate = Configuration.Elements.Types | Configuration.Elements.Repositoy | Configuration.Elements.Query;
 
             Configuration.TypeClasses.RepositoryConstructorParameter
@@ -30,7 +29,7 @@ namespace GraphQL.Code.Generator.Test
             string pathFramework = @"H:\Udemy\soft\Code\GraphQLHobbyAPI-master\HobbyDataLayer\bin\Debug\HobbyDataLayer.dll";
             string pathCore31 = @"H:\Udemy\soft\Code\GraphQL-Demo-master\Coding\PizzaOrder\PizzaOrder.Data\bin\Debug\netcoreapp3.1\PizzaOrder.Data.dll";
 
-            Configuration.InputDllNameAndPath = pathCore;
+            Configuration.InputDllNameAndPath = pathFramework;
             //Configuration.TypeClasses.EntityClassNamesInclude
             //    = new Regex(@"^Hobby$|^Person$", RegexOptions.IgnoreCase);
 
@@ -60,9 +59,9 @@ namespace GraphQL.Code.Generator.Test
             Configuration.QueryClass.QueryClassName = "IBCDMQuery";
             Configuration.QueryClass.QueryClassNamespace = "IBCDM.Graph.Queries";
             Configuration.QueryClass.AdditionalNamespaces = "IBCDM.Repository.GlobalApprovers, IBCDM.Graph.Types.GlobalApprovers";
-            Configuration.TypeClasses.Outputpath += @"\Types_";
-            Configuration.RepositoryClass.Outputpath += @"\Repository_1";
-            Configuration.QueryClass.Outputpath += @"\Query_1";
+            Configuration.TypeClasses.Outputpath += @"\Types_44";
+            Configuration.RepositoryClass.Outputpath += @"\Repository_44";
+            Configuration.QueryClass.Outputpath += @"\Query_44";
             int fileCount = GraphQL.Code.Generator.GraphQLCodeGenerator.GenerateGraphQLCode();
             Console.WriteLine(fileCount + " GraphQL files generated.");
             Console.ReadLine();

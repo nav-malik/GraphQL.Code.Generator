@@ -21,6 +21,11 @@ namespace GraphQL.Code.Generator
         public static Elements ElementsToGenerate;
 
         /// <summary>
+        /// If this field is true then generator will find PrimaryKey and ForiegnKey fields by using KeyAttribute and ForiengKeyAttribute 
+        /// respectively.
+        /// </summary>
+        public static bool UseDataAnnotationsToFindKeys = false;
+        /// <summary>
         /// Add words in this fields as key and provide the plural word for each word. Words in tihs dictionay key will be excluded 
         /// English Pluralization and instead these words will be replaced with its pluralized words provided as value. Otherwise 
         /// standard English pluralization will apply where pluralization needed.

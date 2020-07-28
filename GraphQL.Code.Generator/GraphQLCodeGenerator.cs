@@ -11,6 +11,9 @@ using System.Globalization;
 //using Pluralize.NET.Core;
 using Pluralize.NET;
 using System.Collections.Specialized;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.RegularExpressions;
 
 namespace GraphQL.Code.Generator
 {
@@ -341,8 +344,27 @@ namespace GraphQL.Code.Generator
             bool isGenericType, isCustomObjectType;
             string fieldBaseEntityFullName, fieldBaseEntityName, fieldGraphQLTypeName, fieldGenericReturnType, batchLoaderMethodName,
                 fieldName, propertyName, repositoryMethodByClause, IdFieldName = "Id";
+            List<PropertyInfo> PkProperties = null;
+            Dictionary<PropertyInfo, ForeignKeyAttribute> FkProperties = null;
 
             IdFieldName = getEntityIdFieldName(typeBaseEntityName, properties, out PropertyInfo IdFieldProperty);
+
+            if (Configuration.UseDataAnnotationsToFindKeys)
+            {
+                getPrimaryAndForiegnKeyProperties(properties, out PkProperties, out FkProperties);
+                if (PkProperties != null && PkProperties.Count > 0)
+                {
+                    IdFieldProperty = PkProperties[0];
+                    IdFieldName = PkProperties[0].Name;
+
+                    if (!dicEntitiesIdFieldName.ContainsKey(typeBaseEntityName))
+                        dicEntitiesIdFieldName.Add(typeBaseEntityName, IdFieldProperty.Name);
+                    else
+                        dicEntitiesIdFieldName[typeBaseEntityName] = IdFieldProperty.Name;
+                }
+            }
+            
+            
             /* Commenting this as we'll not use Parent Id's and bool fields as paremeters for repository methods, rather we'll use
              * SearhInputType and PaginationInputType parameters (from GraphQL.Extension package) only.
              */
@@ -438,8 +460,16 @@ namespace GraphQL.Code.Generator
             fieldArguments += "\r" + dicTabs["tab4"] + "),\r" + dicTabs["tab4"];
             foreach (var prop in properties)
             {
-                matchingParentIdField = ParentEntityIdFields.Where(x => x.Name.StartsWith(prop.Name))
-                    .FirstOrDefault();
+                if (!Configuration.UseDataAnnotationsToFindKeys || FkProperties == null || FkProperties.Count < 1)
+                    matchingParentIdField = ParentEntityIdFields.Where(x => x.Name.StartsWith(prop.Name))
+                        .FirstOrDefault();
+                else if (FkProperties != null && FkProperties.Count > 0)
+                {
+                    var fkAttribute = FkProperties.Where(x => x.Key.Name == prop.Name)
+                        .Select(x => x.Value).FirstOrDefault();
+                    if (fkAttribute != null)
+                        matchingParentIdField = properties.Where(x => x.Name == fkAttribute.Name).FirstOrDefault();
+                }
                 if (matchingParentIdField != null)
                     matchingParentIdPropertyType = matchingParentIdField.PropertyType.GetUnderlyingType();
                 if ((prop.PropertyType.IsGenericType && prop.PropertyType.FullName.ToLower().Contains("nullable"))
@@ -1311,6 +1341,17 @@ namespace GraphQL.Code.Generator
             return strResultCode;
         }
 
+        private static void getPrimaryAndForiegnKeyProperties(PropertyInfo[] properties, 
+            out List<PropertyInfo> pkFields, out Dictionary<PropertyInfo, ForeignKeyAttribute> fkFields)
+        {
+            pkFields = properties
+                .Where(x => x.GetCustomAttribute<KeyAttribute>() != null)
+                .ToList();
+            fkFields = properties
+                .Where(x => x.GetCustomAttribute<ForeignKeyAttribute>() != null)
+                .Select(f => new { property = f, fkAttribute = f.GetCustomAttribute<ForeignKeyAttribute>() })
+                .ToDictionary(z => z.property, z => z.fkAttribute);
+        }
         private static string getEntityIdFieldName(string EntityName, PropertyInfo[] properties, out PropertyInfo IdFieldPropperty)
         {
             IdFieldPropperty = properties.Where(x => (x != null && !string.IsNullOrEmpty(x.Name))
