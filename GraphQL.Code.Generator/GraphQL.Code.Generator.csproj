@@ -15,7 +15,7 @@ Added DataAnnotation support. Configuration.UseDataAnnotationsToFindKeys if set 
 Migrated from GraphQL.Code.Generator.Net and GraphQL.Code.Generator.Core to this one pacakge. This will use 
 Linq.Extension package rather than Linq.Extension.Net and Linq.Extension.Core. All string fileds will be nullable and all fields of views will also be nullable by default but can be changed.
 GraphQL.Code.Generator.Net last version 1.2.0.3 and GraphQL.Code.Generator.Core last version was 1.2.0.1</PackageReleaseNotes>
-    <Version>1.2.0.3</Version>
+    <Version>1.2.0.4</Version>
     <AssemblyVersion>1.2.0.4</AssemblyVersion>
     <PackageIcon>GraphQL-Icon.png</PackageIcon>
     <FileVersion>1.2.0.4</FileVersion>
