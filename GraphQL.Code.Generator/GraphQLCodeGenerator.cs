@@ -186,6 +186,7 @@ namespace GraphQL.Code.Generator
             public List<QueryParameterMapping> ParameterMappings;
         }
 
+        private static Assembly assembly = null;
         private static int generatedFilesCount = 0;
         private static IDictionary<string, LogElement> generatedFilesLog;
         private static string PackageName;
@@ -458,8 +459,10 @@ namespace GraphQL.Code.Generator
             fieldArguments += "\r" + dicTabs["tab5"] + "new QueryArgument<PaginationInputType> { Name = \"pagination\"},";
             fieldArguments += "\r" + dicTabs["tab5"] + "new QueryArgument<SearchInputType> { Name = \"search\"}";
             fieldArguments += "\r" + dicTabs["tab4"] + "),\r" + dicTabs["tab4"];
+            
             foreach (var prop in properties)
-            {
+            {                
+
                 if (!Configuration.UseDataAnnotationsToFindKeys || FkProperties == null || FkProperties.Count < 1)
                     matchingParentIdField = ParentEntityIdFields.Where(x => x.Name.StartsWith(prop.Name))
                         .FirstOrDefault();
@@ -494,7 +497,6 @@ namespace GraphQL.Code.Generator
                 fieldBaseEntityFullName = isGenericType ? prop.PropertyType.GenericTypeArguments[0].FullName
                                             : prop.PropertyType.FullName;
                 fieldBaseEntityFullName = fieldBaseEntityFullName.Replace("+", "_");
-
 
                 fieldGraphQLTypeName = (isGenericType ? prop.PropertyType.GenericTypeArguments[0].Name
                                         : prop.PropertyType.Name) + GraphQLGeneratedTypesClassNamePostfix;
@@ -539,6 +541,9 @@ namespace GraphQL.Code.Generator
                 }
                 else
                 {
+                    string PkOrFkIdFieldName = Configuration.UseDataAnnotationsToFindKeys ?
+                        getPkOrFkFieldName(typeBaseEntityFullName, typeBaseEntityName, prop)
+                        : repositoryMethodByClause + "Id";
                     constructor.Statements.Add(new CodeSnippetStatement(""));
 
                     string batchLoaderParams = isGenericType ? "ids" : "ids, token";
@@ -552,9 +557,9 @@ namespace GraphQL.Code.Generator
                     + "var loader = this." + dataLoaderPrivateMemberName + ".Context." + batchLoaderMethodName + "<"
                     + (isGenericType ? IdFieldProperty.PropertyType.Name : matchingParentIdPropertyType.Name)
                     + ", " + fieldBaseEntityFullName + ">\r" + dicTabs["tab6"]
-                    + "($\"Get" + propertyName + "By" + repositoryMethodByClause + "Id[{context.SubFields}]\", (" + batchLoaderParams
+                    + "($\"Get" + propertyName + "By" + /*repositoryMethodByClause + "Id*/ PkOrFkIdFieldName + "[{context.SubFields}]\", (" + batchLoaderParams
                     + ") => " + "\r" + dicTabs["tab6"] + "this." + repositoryPrivateMemberName + ".Get" + propertyName
-                    + "By" + repositoryMethodByClause + "IdAsync(context.Arguments, context.SubFields.Keys, " + batchLoaderParams + "));\r"
+                    + "By" + /*repositoryMethodByClause + "Id*/ PkOrFkIdFieldName + "Async(context.Arguments, context.SubFields.Keys, " + batchLoaderParams + "));\r"
                     + (!isGenericType && matchingParentIdField.PropertyType.FullName.ToLower().Contains("nullable") ? dicTabs["tab6"] : dicTabs["tab5"])
                     + "return await loader.LoadAsync(("
                     + (isGenericType ? IdFieldProperty.PropertyType.Name : matchingParentIdPropertyType.Name)
@@ -567,10 +572,10 @@ namespace GraphQL.Code.Generator
 
                     ));
 
-
-                    if (!dicRepositoryMethodsForLoader.ContainsKey("Get" + propertyName + "By" + repositoryMethodByClause + "IdAsync"))
+                    if (!dicRepositoryMethodsForLoader.ContainsKey("Get" + propertyName + "By" + PkOrFkIdFieldName + "Async"))
                     {
-                        dicRepositoryMethodsForLoader.Add("Get" + propertyName + "By" + repositoryMethodByClause + "IdAsync"
+                        
+                        dicRepositoryMethodsForLoader.Add("Get" + propertyName + "By" + PkOrFkIdFieldName + "Async"
                             , new LoaderRepositoryMapping
                             {
                                 ReturnTypeBaseEntityFullName = fieldBaseEntityFullName
@@ -582,9 +587,18 @@ namespace GraphQL.Code.Generator
                                     getPluralizedValue(propertyName)
                             //getPluralizedValue(fieldBaseEntityName) 
                             ,
-                                IdsParamerterName = (isGenericType ? typeBaseEntityName : fieldBaseEntityName) + "Ids"
+                                IdsParamerterName = Configuration.UseDataAnnotationsToFindKeys ? PkOrFkIdFieldName
+                                    : (isGenericType ? typeBaseEntityName : fieldBaseEntityName) + "Ids"
+                                ,
+                                WhereClauseIdFieldName = Configuration.UseDataAnnotationsToFindKeys ? PkOrFkIdFieldName
+                                    : (isGenericType ? typeBaseEntityName : "") + "Id"
+                                /*
+                                IdsParamerterName = (isGenericType? fkPropAndAttribute.Value.Name : IdFieldName)
+                                //(isGenericType ? typeBaseEntityName : fieldBaseEntityName) + "Ids"
                             ,
-                                WhereClauseIdFieldName = (isGenericType ? typeBaseEntityName : "") + "Id"
+                                WhereClauseIdFieldName = (isGenericType ? fkPropAndAttribute.Value.Name : IdFieldName)
+                                //(isGenericType ? typeBaseEntityName : "") + "Id"
+                                */
                             ,
                                 PropertyType = "int"
                             });
@@ -635,7 +649,7 @@ namespace GraphQL.Code.Generator
                 }
             }
 
-            var assembly = Assembly.LoadFrom(assemblyNameAndPathAndExtension);
+            assembly = Assembly.LoadFrom(assemblyNameAndPathAndExtension);
             var types = assembly.GetTypes()
                 .Where(x => !x.IsInterface && !string.IsNullOrEmpty(x.Name) && !string.IsNullOrEmpty(x.Namespace) &&
                     (
@@ -1037,11 +1051,11 @@ namespace GraphQL.Code.Generator
                     var method = new CodeMemberMethod
                     {
                         Attributes = MemberAttributes.Public | MemberAttributes.Final,
-                        Name = m.Key + "<E, R>"
+                        Name = m.Key + "<E>"
                     };
                     var methodInterface = new CodeMemberMethod
                     {
-                        Name = m.Key + "<E, R>"
+                        Name = m.Key + "<E>"
                     };
                     m.Value.PropertyType = "int";
                     //NullablePropertyNames[m.Value.ReturnTypeBaseEntityName].Contains(m.Value.WhereClauseIdFieldName)
@@ -1341,16 +1355,69 @@ namespace GraphQL.Code.Generator
             return strResultCode;
         }
 
-        private static void getPrimaryAndForiegnKeyProperties(PropertyInfo[] properties, 
-            out List<PropertyInfo> pkFields, out Dictionary<PropertyInfo, ForeignKeyAttribute> fkFields)
+        private static KeyValuePair<PropertyInfo, ForeignKeyAttribute> getFKPropert(string EntityFullName, string FieldName)
         {
-            pkFields = properties
-                .Where(x => x.GetCustomAttribute<KeyAttribute>() != null)
-                .ToList();
-            fkFields = properties
+            KeyValuePair<PropertyInfo, ForeignKeyAttribute> FKProperty = default;
+            var type = assembly.GetType(EntityFullName);
+            if (type != null)
+            {
+                FKProperty = type.GetProperties()
+                    .Where(x => x.Name == FieldName && x.GetCustomAttribute<ForeignKeyAttribute>() != null)
+                .Select(f => new { property = f, fkAttribute = f.GetCustomAttribute<ForeignKeyAttribute>() })
+                .ToDictionary(x=> x.property, x=> x.fkAttribute)
+                .FirstOrDefault();
+            }
+
+            return FKProperty;
+        }
+
+        private static string getPkOrFkFieldName(string EntityFullName, string EntityName, PropertyInfo fieldProperty)
+        {
+            string IdFieldName = string.Empty;
+            Type fieldBaseEntityType = null;
+
+            if (fieldProperty.PropertyType.IsGenericType)
+            {
+                fieldBaseEntityType = fieldProperty.PropertyType.GenericTypeArguments[0];
+
+                IdFieldName = fieldBaseEntityType.GetProperties()
+                    .Where(x => x.PropertyType.FullName == EntityFullName)
+                    .Select(f => f.GetCustomAttribute<ForeignKeyAttribute>().Name)
+                    .FirstOrDefault();
+                if (string.IsNullOrEmpty(IdFieldName))
+                    IdFieldName = EntityName + "Id";
+            }
+            else
+            {
+                IdFieldName = getPKFields(fieldProperty.PropertyType.GetProperties())
+                    .Select(x => x.Name)
+                    .FirstOrDefault();
+                if (string.IsNullOrEmpty(IdFieldName))
+                    IdFieldName = getEntityIdFieldName(EntityName, fieldProperty.PropertyType.GetProperties(),
+                        out PropertyInfo IdFieldProperty);
+            }
+
+            return IdFieldName;
+        }
+
+        private static Dictionary<PropertyInfo, ForeignKeyAttribute> getFKFields(PropertyInfo[] properties)
+        {
+            return properties
                 .Where(x => x.GetCustomAttribute<ForeignKeyAttribute>() != null)
                 .Select(f => new { property = f, fkAttribute = f.GetCustomAttribute<ForeignKeyAttribute>() })
                 .ToDictionary(z => z.property, z => z.fkAttribute);
+        }
+        private static List<PropertyInfo> getPKFields(PropertyInfo[] properties)
+        {
+            return properties
+                .Where(x => x.GetCustomAttribute<KeyAttribute>() != null)
+                .ToList();
+        }
+        private static void getPrimaryAndForiegnKeyProperties(PropertyInfo[] properties, 
+            out List<PropertyInfo> pkFields, out Dictionary<PropertyInfo, ForeignKeyAttribute> fkFields)
+        {
+            pkFields = getPKFields(properties);
+            fkFields = getFKFields(properties);
         }
         private static string getEntityIdFieldName(string EntityName, PropertyInfo[] properties, out PropertyInfo IdFieldPropperty)
         {
@@ -1391,7 +1458,7 @@ namespace GraphQL.Code.Generator
             if (addCopyRight)
                 ns.Comments.Add(new CodeCommentStatement("Copyright:                Nav Malik"));
             if (addAuthor)
-                ns.Comments.Add(new CodeCommentStatement("Author:\t\t\t\t\t\tNav Malik"));
+                ns.Comments.Add(new CodeCommentStatement("Author:\t\t\t\t\tNav Malik"));
             return ns;
         }
         private static string addClassPrivateMember(string member, ref CodeTypeDeclaration _targetClass)

@@ -10,6 +10,8 @@ namespace GraphQL.Code.Generator.Test
         static void Main(string[] args)
         {
             Configuration.UseDataAnnotationsToFindKeys = true;
+            Configuration.MakeAllFieldsOfViewNullable = true;
+            Configuration.ViewNameFilter = new Regex(@"^Vw.*$");
             Configuration.ElementsToGenerate = Configuration.Elements.Types | Configuration.Elements.Repositoy | Configuration.Elements.Query;
 
             Configuration.TypeClasses.RepositoryConstructorParameter
@@ -59,9 +61,9 @@ namespace GraphQL.Code.Generator.Test
             Configuration.QueryClass.QueryClassName = "IBCDMQuery";
             Configuration.QueryClass.QueryClassNamespace = "IBCDM.Graph.Queries";
             Configuration.QueryClass.AdditionalNamespaces = "IBCDM.Repository.GlobalApprovers, IBCDM.Graph.Types.GlobalApprovers";
-            Configuration.TypeClasses.Outputpath += @"\Types_44";
-            Configuration.RepositoryClass.Outputpath += @"\Repository_44";
-            Configuration.QueryClass.Outputpath += @"\Query_44";
+            Configuration.TypeClasses.Outputpath += @"\July_28_NHL_2";
+            Configuration.RepositoryClass.Outputpath += @"\July_28_NHL_2";
+            Configuration.QueryClass.Outputpath += @"\July_28_NHL_2";
             int fileCount = GraphQL.Code.Generator.GraphQLCodeGenerator.GenerateGraphQLCode();
             Console.WriteLine(fileCount + " GraphQL files generated.");
             Console.ReadLine();
