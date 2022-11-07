@@ -8,16 +8,17 @@
     <Description>This package will generate GraphQL classes (Type, Query, and Repository) dynamically from Domain Entity classes. Use the Configuration class and sub classes to provide the inputs to the Generator.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>GraphQL GraphQL.Code.Generator GraphQL-dotnet GraphQL.dotnet GraphQL-Schema GraphQL.Schema.Generator GraphQL.EnitityFramework GraphQLEntity GraphQL.Entity EnitityFramework.GraphQL Entity.GraphQL EntityGraphQL</PackageTags>
-    <PackageReleaseNotes>Bug fixes related to Key and ForeignKey attributes.
+    <PackageReleaseNotes>1.2.0.4 Bug fix when generating views without primary keys
+
 Added DataAnnotation support. Configuration.UseDataAnnotationsToFindKeys if set to true then Primary Key will be that first field with Key attribute on it and Foreign Keys will be find with ForeignKey attribute on the fields. 
 
 Migrated from GraphQL.Code.Generator.Net and GraphQL.Code.Generator.Core to this one pacakge. This will use 
 Linq.Extension package rather than Linq.Extension.Net and Linq.Extension.Core. All string fileds will be nullable and all fields of views will also be nullable by default but can be changed.
 GraphQL.Code.Generator.Net last version 1.2.0.3 and GraphQL.Code.Generator.Core last version was 1.2.0.1</PackageReleaseNotes>
     <Version>1.2.0.3</Version>
-    <AssemblyVersion>1.2.0.3</AssemblyVersion>
+    <AssemblyVersion>1.2.0.4</AssemblyVersion>
     <PackageIcon>GraphQL-Icon.png</PackageIcon>
-    <FileVersion>1.2.0.3</FileVersion>
+    <FileVersion>1.2.0.4</FileVersion>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
