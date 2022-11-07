@@ -551,11 +551,11 @@ namespace GraphQL.Code.Generator
                      "FieldAsync<" + fieldGenericReturnType + ">\r" + dicTabs["tab3"] + "(\r" + dicTabs["tab4"] + "name: \""
                     + fieldName + "\",\r" + dicTabs["tab4"] + fieldArguments
                     + "resolve: async context => \r" + dicTabs["tab4"] + "{\r" + dicTabs["tab5"]
-                    + (!isGenericType && matchingParentIdField.PropertyType.FullName.ToLower().Contains("nullable")
-                        ? "if (context.Source." + matchingParentIdField.Name + " != null)\r" + dicTabs["tab5"]
+                    + (!isGenericType && matchingParentIdField != null && matchingParentIdField.PropertyType.FullName.ToLower().Contains("nullable")
+                        ? "if (context.Source." + matchingParentIdField?.Name + " != null)\r" + dicTabs["tab5"]
                     + "{\r" + dicTabs["tab6"] : "")
                     + "var loader = this." + dataLoaderPrivateMemberName + ".Context." + batchLoaderMethodName + "<"
-                    + (isGenericType ? IdFieldProperty.PropertyType.Name : matchingParentIdPropertyType.Name)
+                    + (isGenericType ? IdFieldProperty?.PropertyType.Name : matchingParentIdPropertyType.Name)
                     + ", " + fieldBaseEntityFullName + ">\r" + dicTabs["tab6"]
                     + "($\"Get" + propertyName + "By" + /*repositoryMethodByClause + "Id*/ PkOrFkIdFieldName + "[{context.SubFields}]\", (" + batchLoaderParams
                     + ") => " + "\r" + dicTabs["tab6"] + "this." + repositoryPrivateMemberName + ".Get" + propertyName
