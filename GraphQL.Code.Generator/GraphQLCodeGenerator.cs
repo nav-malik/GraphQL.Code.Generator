@@ -216,9 +216,12 @@ namespace GraphQL.Code.Generator
         private static readonly string[] defaulAdditionalNamespacesForGraphQLTypes
             = { "System", "System.Collections.Generic", "GraphQL.DataLoader", "GraphQL.Types",
             "GraphQL.Extension.Types.Filter", "GraphQL.Extension.Types.Pagination" };
-
+        
         private static readonly string[] defaulAdditionalNamespacesForRepository = { "System", "System.Collections.Generic", "System.Linq",
-            "System.Threading", "System.Threading.Tasks", "System.Data.Entity", "Linq.Extension" };
+            "System.Threading", "System.Threading.Tasks", 
+            Configuration.ORMType == Configuration.ORMTypes.EF6 ? "System.Data.Entity" 
+                : Configuration.ORMType == Configuration.ORMTypes.EFCore ? "Microsoft.EntityFrameworkCore" : "", 
+            "Linq.Extension" };
 
         private static readonly string[] defaulAdditionalNamespacesForGraphQLQuery = { "System", "GraphQL.Types.Relay.DataObjects",
             "GraphQL.Types", "GraphQL.Extension.Types.Filter", "GraphQL.Extension.Types.Pagination" };
@@ -998,7 +1001,8 @@ namespace GraphQL.Code.Generator
 
                 foreach (string ns in defaulAdditionalNamespacesForRepository)
                 {
-                    repositoryNamespace.Imports.Add(new CodeNamespaceImport(ns.Trim()));
+                    if (!string.IsNullOrEmpty(ns))
+                        repositoryNamespace.Imports.Add(new CodeNamespaceImport(ns.Trim()));
                 }
 
                 if (!string.IsNullOrEmpty(Configuration.RepositoryClass.AdditionalNamespaces))

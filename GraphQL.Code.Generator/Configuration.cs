@@ -17,6 +17,12 @@ namespace GraphQL.Code.Generator
             //Mutation = 8,
             Repositoy = 16
         }
+        public enum ORMTypes
+        {
+            None = 0,
+            EF6 = 1,
+            EFCore = 2
+        }
         public static string InputDllNameAndPath = string.Empty;
         public static Elements ElementsToGenerate;
 
@@ -41,6 +47,7 @@ namespace GraphQL.Code.Generator
         /// 
         public static Regex ViewNameFilter = null;
         public static bool MakeAllFieldsOfViewNullable = true;
+        public static ORMTypes ORMType = ORMTypes.EF6;
         public static class TypeClasses
         {
             /// <summary>
