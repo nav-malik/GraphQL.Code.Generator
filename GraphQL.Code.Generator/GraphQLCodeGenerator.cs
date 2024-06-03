@@ -458,10 +458,10 @@ namespace GraphQL.Code.Generator
             string nullableString = string.Empty;
             PropertyInfo matchingParentIdField = null;
             Type matchingParentIdPropertyType = null;
-            string fieldArguments = "arguments:\r" + dicTabs["tab4"] + "new QueryArguments(";
-            fieldArguments += "\r" + dicTabs["tab5"] + "new QueryArgument<PaginationInputType> { Name = \"pagination\"},";
-            fieldArguments += "\r" + dicTabs["tab5"] + "new QueryArgument<SearchInputType> { Name = \"search\"}";
-            fieldArguments += "\r" + dicTabs["tab4"] + "),\r" + dicTabs["tab4"];
+            string fieldArguments = "";// "arguments:\r" + dicTabs["tab4"] + "new QueryArguments(";
+            fieldArguments += "\r" + dicTabs["tab3"] + ".Argument<PaginationInputType>(\"pagination\")";
+            fieldArguments += "\r" + dicTabs["tab3"] + ".Argument<SearchInputType>(\"search\")\r" + dicTabs["tab3"];
+            //fieldArguments += "\r" + dicTabs["tab4"] + "),\r" + dicTabs["tab4"];
             
             foreach (var prop in properties)
             {                
@@ -547,33 +547,40 @@ namespace GraphQL.Code.Generator
                     string PkOrFkIdFieldName = Configuration.UseDataAnnotationsToFindKeys ?
                         getPkOrFkFieldName(typeBaseEntityFullName, typeBaseEntityName, prop)
                         : repositoryMethodByClause + "Id";
-                    constructor.Statements.Add(new CodeSnippetStatement(""));
+                    constructor.Statements.Add(new CodeSnippetStatement(""));                    
 
                     string batchLoaderParams = isGenericType ? "ids" : "ids, token";
                     constructor.Statements.Add(new CodeSnippetExpression(
-                     "FieldAsync<" + fieldGenericReturnType + ">\r" + dicTabs["tab3"] + "(\r" + dicTabs["tab4"] + "name: \""
-                    + fieldName + "\",\r" + dicTabs["tab4"] + fieldArguments
-                    + "resolve: async context => \r" + dicTabs["tab4"] + "{\r" + dicTabs["tab5"]
+                     "Field<" + fieldGenericReturnType + ">(\""
+                    + fieldName + "\")" + fieldArguments
+                    + ".ResolveAsync(async context => \r" + dicTabs["tab3"] + "{\r" + dicTabs["tab4"]
+                    + "Dictionary<string, object> args = new Dictionary<string, object>(); "
+                    + "\r" + dicTabs["tab4"]
+                    + "args.Add(\"pagination\", context.GetArgument<object>(\"pagination\"));"
+                    + "\r" + dicTabs["tab4"]
+                    + "args.Add(\"search\", context.GetArgument<object>(\"search\"));"
+                    + "\r" + dicTabs["tab4"]
                     + (!isGenericType && matchingParentIdField != null && matchingParentIdField.PropertyType.FullName.ToLower().Contains("nullable")
-                        ? "if (context.Source." + matchingParentIdField?.Name + " != null)\r" + dicTabs["tab5"]
-                    + "{\r" + dicTabs["tab6"] : "")
+                        ? "if (context.Source." + matchingParentIdField?.Name + " != null)\r" + dicTabs["tab4"]
+                    + "{\r" + dicTabs["tab5"] : "")
                     + "var loader = this." + dataLoaderPrivateMemberName + ".Context." + batchLoaderMethodName + "<"
                     + (isGenericType ? IdFieldProperty?.PropertyType.Name : matchingParentIdPropertyType.Name)
-                    + ", " + fieldBaseEntityFullName + ">\r" + dicTabs["tab6"]
+                    + ", " + fieldBaseEntityFullName + ">\r" + dicTabs["tab5"]
                     + "($\"Get" + propertyName + "By" + /*repositoryMethodByClause + "Id*/ PkOrFkIdFieldName + "[{context.SubFields}]\", (" + batchLoaderParams
-                    + ") => " + "\r" + dicTabs["tab6"] + "this." + repositoryPrivateMemberName + ".Get" + propertyName
-                    + "By" + /*repositoryMethodByClause + "Id*/ PkOrFkIdFieldName + "Async(context.Arguments, context.SubFields.Keys, " + batchLoaderParams + "));\r"
-                    + (!isGenericType && matchingParentIdField.PropertyType.FullName.ToLower().Contains("nullable") ? dicTabs["tab6"] : dicTabs["tab5"])
+                    + ") => " + "\r" + dicTabs["tab5"] + "this." + repositoryPrivateMemberName + ".Get" + propertyName
+                    + "By" + /*repositoryMethodByClause + "Id*/ PkOrFkIdFieldName + "Async(args, context.SubFields.Keys, " + batchLoaderParams + "));\r"
+                    + (!isGenericType && matchingParentIdField.PropertyType.FullName.ToLower().Contains("nullable") ? dicTabs["tab5"] : dicTabs["tab4"])
                     + "return await loader.LoadAsync(("
                     + (isGenericType ? IdFieldProperty.PropertyType.Name : matchingParentIdPropertyType.Name)
                     + ") context.Source."
                     + (isGenericType ? IdFieldName : matchingParentIdField.Name) + ");"
                     + (!isGenericType && matchingParentIdField.PropertyType.FullName.ToLower().Contains("nullable")
-                        ? "\r " + dicTabs["tab5"] + "}\r" + dicTabs["tab5"] + "else\r" + dicTabs["tab6"] + "return null;\r" + dicTabs["tab4"]
-                    : "\r" + dicTabs["tab4"])
-                    + "}\r" + dicTabs["tab3"] + ")"
+                        ? "\r " + dicTabs["tab4"] + "}\r" + dicTabs["tab4"] + "else\r" + dicTabs["tab5"] + "return null;\r" + dicTabs["tab3"]
+                    : "\r" + dicTabs["tab3"])
+                    + "})"
 
                     ));
+                    constructor.Statements.Add(new CodeSnippetStatement(""));
 
                     if (!dicRepositoryMethodsForLoader.ContainsKey("Get" + propertyName + "By" + PkOrFkIdFieldName + "Async"))
                     {
@@ -608,8 +615,7 @@ namespace GraphQL.Code.Generator
                     }
                 }
             }
-
-            constructor.Statements.Add(new CodeSnippetStatement(""));
+            
 
             if (!string.IsNullOrEmpty(Configuration.TypeClasses.AdditionalCodeToBeAddedInConstructor))
             {
@@ -809,35 +815,47 @@ namespace GraphQL.Code.Generator
             constructor.Statements.Add(new CodeSnippetStatement(""));
 
 
-            string returnStatment, fieldName, fieldArguments = "", resolver = "";
+            string returnStatment, fieldName, fieldArguments = "", resolver = "", resolverReturn = "";
 
             foreach (var m in dicQueryFieldNamesAndParamsListWithTypes)
             {
                 fieldArguments = "";
-                resolver = "resolve: async context => await this." + repositoryPrivateMemberName
-                        + ".Get" + m.Key + "(";
+                resolver = ".ResolveAsync(async context => " + "\r" + dicTabs["tab3"] +
+                    "{";
+                    
+
+                resolverReturn = "return await this." + repositoryPrivateMemberName + ".Get" + m.Key + "(";
                 if (m.Value.ParameterMappings.Count > 0)
                 {
                     bool isContextParamAdded = false;
                     //resolver += "\r" + dicTabs["tab5"] ;
-                    fieldArguments = "arguments:\r" + dicTabs["tab4"] + "new QueryArguments(";
+                    fieldArguments = "";// "arguments:\r" + dicTabs["tab4"] + "new QueryArguments(";
                     foreach (var p in m.Value.ParameterMappings)
                     {
-                        fieldArguments += "\r" + dicTabs["tab5"] + "new QueryArgument<" + (p.IsNullable ? p.GraphQLParameterType
-                            : "NonNullGraphType<" + p.GraphQLParameterType + ">") + "> { Name = \""
-                            + Utility.getCamelCaseString(p.ParameterName) + "\"},";
+                        fieldArguments += "\r" + dicTabs["tab3"] + ".Argument<" + (p.IsNullable ? p.GraphQLParameterType
+                            : "NonNullGraphType<" + p.GraphQLParameterType + ">") + ">(\""
+                            + Utility.getCamelCaseString(p.ParameterName) + "\")";
                         //resolver +=;
                         if (p.CSharpParameterType == null)
                         {
                             if (!isContextParamAdded)
+                                resolver += "\r" + dicTabs["tab4"] + 
+                                    "Dictionary<string, object> args = new Dictionary<string, object>(); ";
+                            resolver += "\r" + dicTabs["tab4"] +
+                                "object " + Utility.getCamelCaseString(p.ParameterName) 
+                                + " = context.GetArgument<object>(\"" + Utility.getCamelCaseString(p.ParameterName) + "\");";
+                            resolver += "\r" + dicTabs["tab4"] +
+                                "args.Add(\"" + Utility.getCamelCaseString(p.ParameterName) + "\", " 
+                                + Utility.getCamelCaseString(p.ParameterName) + ");";
+                            if (!isContextParamAdded)
                             {
-                                resolver += "\r" + dicTabs["tab5"] + "context.Arguments, context.SubFields.Keys";
+                                resolverReturn += "\r" + dicTabs["tab5"] + "args, context.SubFields.Keys);";                                
                                 isContextParamAdded = true;
                             }
                         }
                         else
-                            resolver += "\r" + dicTabs["tab5"] + "context.GetArgument<" + p.CSharpParameterType.Name
-                            + ">(\"" + Utility.getCamelCaseString(p.ParameterName) + "\"),";
+                            resolverReturn += "\r" + dicTabs["tab5"] + "context.GetArgument<" + p.CSharpParameterType.Name
+                            + ">(\"" + Utility.getCamelCaseString(p.ParameterName) + "\"));";
                         /* Commenting this as we'll not use Parent Id's and bool fields as paremeters for repository methods, rather we'll use
          * SearhInputType and PaginationInputType parameters (from GraphQL.Extension package) only.
                         + ((p.CSharpParameterType.IsGenericType && p.CSharpParameterType.GenericTypeArguments[0].Name == "Boolean")
@@ -852,23 +870,24 @@ namespace GraphQL.Code.Generator
                         )                            
                     );*/
                     }
-                    resolver = resolver.TrimEnd(',');
-                    fieldArguments = fieldArguments.TrimEnd(',');
-                    fieldArguments += "\r" + dicTabs["tab4"] + "),\r" + dicTabs["tab4"];
+                    //resolver = resolver.TrimEnd(',');
+                    //fieldArguments = fieldArguments.TrimEnd(',');
+                    //fieldArguments += "\r" + dicTabs["tab4"] + "),\r" + dicTabs["tab4"];
                 }
-                resolver += "\r" + dicTabs["tab4"] + ")";
+                resolver += "\r" + dicTabs["tab4"] + resolverReturn;
+                resolver += "\r" + dicTabs["tab3"] + "})";
                 fieldName = Utility.getCamelCaseString(
                     //m.Value.IsArray ? pluralizationService.Pluralize(m.Value.ReturnTypeBaseEntityName) : m.Value.ReturnTypeBaseEntityName);
                     m.Key);
-                returnStatment = "FieldAsync<" + (m.Value.IsArray ? "ListGraphType<" : "")
+                returnStatment = "Field<" + (m.Value.IsArray ? "ListGraphType<" : "")
                     + m.Value.ReturnTypeBaseEntityName + Configuration.TypeClasses.ClassSuffix
-                    + (m.Value.IsArray ? ">>" : ">") + "\r" + dicTabs["tab3"] + "(\r" + dicTabs["tab4"];
+                    + (m.Value.IsArray ? ">>" : ">") ;
 
                 // + "resolve: async context => \r" + dicTabs["tab4"] + "{\r" + dicTabs["tab5"]
-                constructor.Statements.Add(new CodeSnippetExpression(returnStatment + "name: \""
-                    + fieldName + "\",\r" + dicTabs["tab4"] + fieldArguments + resolver + "\r" + dicTabs["tab3"] + ")"
+                constructor.Statements.Add(new CodeSnippetExpression(returnStatment + "(\""
+                    + fieldName + "\")" + fieldArguments + "\r" + dicTabs["tab3"] + resolver 
                         ));
-
+                constructor.Statements.Add(new CodeSnippetStatement(""));
 
             } //End of All methods foreach.
 
