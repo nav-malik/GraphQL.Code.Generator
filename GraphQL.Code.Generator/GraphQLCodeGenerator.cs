@@ -182,7 +182,7 @@ namespace GraphQL.Code.Generator
             /// object then it will be false.
             /// </summary>
             public bool IsArray;
-
+            public bool IsTotal = false;
             public List<QueryParameterMapping> ParameterMappings;
         }
 
@@ -215,7 +215,8 @@ namespace GraphQL.Code.Generator
 
         private static readonly string[] defaulAdditionalNamespacesForGraphQLTypes
             = { "System", "System.Collections.Generic", "GraphQL.DataLoader", "GraphQL.Types",
-            "GraphQL.Extension.Types.Filter", "GraphQL.Extension.Types.Pagination" };
+            "GraphQL.Extension.Types.Filter", "GraphQL.Extension.Types.Pagination", 
+            "GraphQL.Extension.Types.Unique", "GraphQL.Extension.Types.Grouping" };
         
         private static readonly string[] defaulAdditionalNamespacesForRepository = { "System", "System.Collections.Generic", "System.Linq",
             "System.Threading", "System.Threading.Tasks", 
@@ -224,7 +225,8 @@ namespace GraphQL.Code.Generator
             "Linq.Extension" };
 
         private static readonly string[] defaulAdditionalNamespacesForGraphQLQuery = { "System", "GraphQL.Types.Relay.DataObjects",
-            "GraphQL.Types", "GraphQL.Extension.Types.Filter", "GraphQL.Extension.Types.Pagination" };
+            "GraphQL.Types", "GraphQL.Extension.Types.Filter", "GraphQL.Extension.Types.Pagination",
+        "GraphQL.Extension.Types.Unique", "GraphQL.Extension.Types.Grouping"};
 
         private static void AddField(string fieldName,
             string fieldTypeFullName, MemberAttributes fieldAttributes, ref CodeTypeDeclaration _targetClass)
@@ -432,6 +434,63 @@ namespace GraphQL.Code.Generator
                             {
                                 ParameterName = "search", GraphQLParameterType = "SearchInputType", CSharpParameterType = null,
                                 IsNullable = true
+                            },
+                            new QueryParameterMapping
+                            {
+                                ParameterName = "distinctBy", GraphQLParameterType = "DistinctByInputType", CSharpParameterType = null,
+                                IsNullable = true
+                            },
+                            new QueryParameterMapping
+                            {
+                                ParameterName = "distinct", GraphQLParameterType = "BooleanGraphType", CSharpParameterType = null,
+                                IsNullable = true
+                            },
+                            //new QueryParameterMapping
+                            //{
+                            //    ParameterName = "groupBy", GraphQLParameterType = "GroupByInputType", CSharpParameterType = null,
+                            //    IsNullable = true
+                            //}
+                        }
+                });
+            }
+            string totalTypeBaseEntityNamePluralGroupBy = "Total" + typeBaseEntityNamePlural + "GroupBy";
+
+            if (!dicQueryFieldNamesAndParamsListWithTypes.ContainsKey(totalTypeBaseEntityNamePluralGroupBy))
+            {
+                dicQueryFieldNamesAndParamsListWithTypes.Add(totalTypeBaseEntityNamePluralGroupBy, new QueryRepositoryMethodMapping
+                {
+                    ReturnTypeBaseEntityName = "IntGraph",
+                    ReturnTypeBaseEntityFullName = "int",
+                    IsArray = false,
+                    IsTotal = true,
+                    ContextProtpertyName = typeBaseEntityNamePlural,
+                    ParameterMappings =
+                        new List<QueryParameterMapping>()
+                        {
+                            //new QueryParameterMapping
+                            //{
+                            //    ParameterName = "pagination", GraphQLParameterType = "PaginationInputType", CSharpParameterType = null,
+                            //    IsNullable = true
+                            //},
+                            new QueryParameterMapping
+                            {
+                                ParameterName = "search", GraphQLParameterType = "SearchInputType", CSharpParameterType = null,
+                                IsNullable = true
+                            },
+                            //new QueryParameterMapping
+                            //{
+                            //    ParameterName = "distinctBy", GraphQLParameterType = "DistinctByInputType", CSharpParameterType = null,
+                            //    IsNullable = true
+                            //},
+                            //new QueryParameterMapping
+                            //{
+                            //    ParameterName = "distinct", GraphQLParameterType = "BooleanGraphType", CSharpParameterType = null,
+                            //    IsNullable = true
+                            //},
+                            new QueryParameterMapping
+                            {
+                                ParameterName = "groupBy", GraphQLParameterType = "GroupByInputType", CSharpParameterType = null,
+                                IsNullable = true
                             }
                         }
                 });
@@ -460,9 +519,11 @@ namespace GraphQL.Code.Generator
             Type matchingParentIdPropertyType = null;
             string fieldArguments = "";// "arguments:\r" + dicTabs["tab4"] + "new QueryArguments(";
             fieldArguments += "\r" + dicTabs["tab3"] + ".Argument<PaginationInputType>(\"pagination\")";
-            fieldArguments += "\r" + dicTabs["tab3"] + ".Argument<SearchInputType>(\"search\")\r" + dicTabs["tab3"];
+            fieldArguments += "\r" + dicTabs["tab3"] + ".Argument<SearchInputType>(\"search\")";
+            fieldArguments += "\r" + dicTabs["tab3"] + ".Argument<DistinctByInputType>(\"distinctBy\")";
+            fieldArguments += "\r" + dicTabs["tab3"] + ".Argument<BooleanGraphType>(\"distinct\")\r" + dicTabs["tab3"];            
             //fieldArguments += "\r" + dicTabs["tab4"] + "),\r" + dicTabs["tab4"];
-            
+
             foreach (var prop in properties)
             {                
 
@@ -559,6 +620,10 @@ namespace GraphQL.Code.Generator
                     + "args.Add(\"pagination\", context.GetArgument<object>(\"pagination\"));"
                     + "\r" + dicTabs["tab4"]
                     + "args.Add(\"search\", context.GetArgument<object>(\"search\"));"
+                    + "\r" + dicTabs["tab4"]
+                    + "args.Add(\"distinctBy\", context.GetArgument<object>(\"distinctBy\"));"
+                    + "\r" + dicTabs["tab4"]
+                    + "args.Add(\"distinct\", context.GetArgument<bool>(\"distinct\"));"
                     + "\r" + dicTabs["tab4"]
                     + (!isGenericType && matchingParentIdField != null && matchingParentIdField.PropertyType.FullName.ToLower().Contains("nullable")
                         ? "if (context.Source." + matchingParentIdField?.Name + " != null)\r" + dicTabs["tab4"]
@@ -842,20 +907,21 @@ namespace GraphQL.Code.Generator
                                 resolver += "\r" + dicTabs["tab4"] + 
                                     "Dictionary<string, object> args = new Dictionary<string, object>(); ";
                             resolver += "\r" + dicTabs["tab4"] +
-                                "object " + Utility.getCamelCaseString(p.ParameterName) 
-                                + " = context.GetArgument<object>(\"" + Utility.getCamelCaseString(p.ParameterName) + "\");";
+                                (p.GraphQLParameterType == "BooleanGraphType" ? "bool" : "object") + " " + Utility.getCamelCaseString(p.ParameterName) 
+                                + " = context.GetArgument<" + (p.GraphQLParameterType == "BooleanGraphType" ? "bool" : "object") + ">(\"" 
+                                + Utility.getCamelCaseString(p.ParameterName) + "\");";
                             resolver += "\r" + dicTabs["tab4"] +
                                 "args.Add(\"" + Utility.getCamelCaseString(p.ParameterName) + "\", " 
                                 + Utility.getCamelCaseString(p.ParameterName) + ");";
                             if (!isContextParamAdded)
                             {
-                                resolverReturn += "\r" + dicTabs["tab5"] + "args, context.SubFields.Keys);";                                
+                                resolverReturn += "\r" + dicTabs["tab5"] + "args" + (!m.Value.IsTotal ? ", context.SubFields.Keys" : "" ) +");";                                
                                 isContextParamAdded = true;
                             }
                         }
                         else
                             resolverReturn += "\r" + dicTabs["tab5"] + "context.GetArgument<" + p.CSharpParameterType.Name
-                            + ">(\"" + Utility.getCamelCaseString(p.ParameterName) + "\"));";
+                            + ">(\"" + Utility.getCamelCaseString(p.ParameterName) + "\", context.SubFields.Keys));";
                         /* Commenting this as we'll not use Parent Id's and bool fields as paremeters for repository methods, rather we'll use
          * SearhInputType and PaginationInputType parameters (from GraphQL.Extension package) only.
                         + ((p.CSharpParameterType.IsGenericType && p.CSharpParameterType.GenericTypeArguments[0].Name == "Boolean")
@@ -959,6 +1025,7 @@ namespace GraphQL.Code.Generator
                 }
                 AddQueryConstructor(constructorParameters, parameterToFieldAssignmentStatments, repositoryPrivateMemberName);
 
+         
                 queryNamespace.Types.Add(queryClass);
                 targetUnit.Namespaces.Clear();
                 targetUnit.Namespaces.Add(queryNamespace);
@@ -1100,13 +1167,11 @@ namespace GraphQL.Code.Generator
                     tabs = $"\r{dicTabs["tab4"]}";
                     arrayTypeMethodStatements = $"var res = this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}"
                     + $"{ tabs}.AsNoTracking(){tabs}";
-                    arrayTypeMethodStatements += $".Where(LinqDynamicExtension.WherePredicateWithRelationalIds\r{dicTabs["tab5"]}<" +
-                        $"{ m.Value.ReturnTypeBaseEntityFullName }, E>(conditionalArguments, " +
+                    arrayTypeMethodStatements += $".WhereWithDistinctBy((conditionalArguments, " +
+                        $"this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}, " +
                         $"{m.Value.IdsParamerterName}, \"{m.Value.WhereClauseIdFieldName}\")){tabs}" +
-                        $".Pagination(conditionalArguments){tabs}.Select(LinqDynamicExtension" +
-                        $".DynamicSelectGeneratorAnomouysType\r{dicTabs["tab5"]}<{ m.Value.ReturnTypeBaseEntityFullName }>" +
-                        $"(selectionFields)){tabs}.ToList(){tabs}.ToNonAnonymousList(typeof(" +
-                        $"{ m.Value.ReturnTypeBaseEntityFullName }));";
+                        $".Select(selectionFields){tabs}" +
+                        $".Pagination(conditionalArguments){tabs}.ToList();";
 
                     if (m.Value.IsByParent)
                     {
@@ -1198,26 +1263,32 @@ namespace GraphQL.Code.Generator
                                         : qp.CSharpParameterType;
                                 method.Parameters.Add(new CodeParameterDeclarationExpression
                                 (paramType, qp.ParameterName));
+                                method.Parameters.Add(new CodeParameterDeclarationExpression("IEnumerable<string>", "selectionFields"));
                                 methodInterface.Parameters.Add(new CodeParameterDeclarationExpression
                                     (paramType, qp.ParameterName));
+                                methodInterface.Parameters.Add(new CodeParameterDeclarationExpression("IEnumerable<string>", "selectionFields"));
                             }
                             else if (!isContextParamAdded)
                             {
                                 method.Parameters.Add(new CodeParameterDeclarationExpression("IDictionary<string, object>", "conditionalArguments"));
-                                method.Parameters.Add(new CodeParameterDeclarationExpression("IEnumerable<string>", "selectionFields"));
                                 methodInterface.Parameters.Add(new CodeParameterDeclarationExpression("IDictionary<string, object>", "conditionalArguments"));
-                                methodInterface.Parameters.Add(new CodeParameterDeclarationExpression("IEnumerable<string>", "selectionFields"));
+                                if (!m.Value.IsTotal)
+                                {
+                                    method.Parameters.Add(new CodeParameterDeclarationExpression("IEnumerable<string>", "selectionFields"));
+                                    methodInterface.Parameters.Add(new CodeParameterDeclarationExpression("IEnumerable<string>", "selectionFields"));
+                                }
                                 isContextParamAdded = true;
                             }
 
                         }
-                        if (!m.Value.IsArray)
+                        if (!m.Value.IsArray && !m.Value.IsTotal)
                         {
                             var firstParam = m.Value.ParameterMappings[0];
+                            returnStatment += ".Select(selectionFields)\r" + dicTabs["tab3"];
                             returnStatment += ".Where(x => x." + firstParam.ParameterName + " == " + firstParam.ParameterName
                             + ")\r" + dicTabs["tab3"] + ".FirstOrDefault())";
                         }
-                        else
+                        else if (!m.Value.IsTotal)
                         {
                             //method.Comments.Add(new CodeCommentStatement("Generator will only generate code for 2 Nullable paramerter."));
                             //method.Comments.Add(new CodeCommentStatement("If there are more than 2 paramerter then add rest of the code."));
@@ -1232,15 +1303,30 @@ namespace GraphQL.Code.Generator
                             tabs = $"\r{dicTabs["tab4"]}";
                             arrayTypeMethodStatements = $"var res = this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}"
                             + $"{ tabs}.AsNoTracking(){tabs}";
-                            arrayTypeMethodStatements += $".Where(LinqDynamicExtension.DynamicWherePredicate\r{dicTabs["tab5"]}<" +
-                                $"{ m.Value.ReturnTypeBaseEntityFullName }>(conditionalArguments)){tabs}" +
-                                $".Pagination(conditionalArguments){tabs}.Select(LinqDynamicExtension" +
-                                $".DynamicSelectGeneratorAnomouysType\r{dicTabs["tab5"]}<{ m.Value.ReturnTypeBaseEntityFullName }>" +
-                                $"(selectionFields)){tabs}.ToList(){tabs}.ToNonAnonymousList(typeof(" +
-                                $"{ m.Value.ReturnTypeBaseEntityFullName }));\r\r{dicTabs["tab3"]}var results = (IEnumerable<" +
-                                $"{ m.Value.ReturnTypeBaseEntityFullName }>) res;\r\r{dicTabs["tab3"]}";
+                            arrayTypeMethodStatements += $".WhereWithDistinctBy(conditionalArguments, " +
+                                $"this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}, ','){tabs}" +
+                                $".Select(selectionFields){tabs}" +
+                                $".Pagination(conditionalArguments){tabs}" +                                
+                                $".ToList();\r\r{dicTabs["tab3"]}";
                             arrayTypeMethodStatements +=
-                                $"return Task.FromResult<IEnumerable<{m.Value.ReturnTypeBaseEntityFullName}>>(results)";
+                                $"return Task.FromResult<IEnumerable<{m.Value.ReturnTypeBaseEntityFullName}>>(res)";
+
+                            //arrayTypeMethodStatements += "\r" + dicTabs["tab3"] + "return Task.FromResult<" + returnTypePart
+                            //        + ">(results)";
+                            returnStatment = arrayTypeMethodStatements;
+                            //create a function and send m.Value.ParameterMappings to it and then write code there.
+                        }
+
+                        else 
+                        {
+                            tabs = $"\r{dicTabs["tab4"]}";
+                            arrayTypeMethodStatements = $"var res = this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}"
+                            + $"{tabs}.AsNoTracking(){tabs}";
+                            arrayTypeMethodStatements += $".Where(conditionalArguments) {tabs}" +
+                                $".GroupBy(conditionalArguments){tabs}" +
+                                $".Count();\r\r{dicTabs["tab3"]}";
+                            arrayTypeMethodStatements +=
+                                $"return Task.FromResult(res)";
 
                             //arrayTypeMethodStatements += "\r" + dicTabs["tab3"] + "return Task.FromResult<" + returnTypePart
                             //        + ">(results)";
