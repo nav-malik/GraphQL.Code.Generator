@@ -614,7 +614,7 @@ namespace GraphQL.Code.Generator
                     constructor.Statements.Add(new CodeSnippetExpression(
                      "Field<" + fieldGenericReturnType + ">(\""
                     + fieldName + "\")" + fieldArguments
-                    + ".ResolveAsync(async context => \r" + dicTabs["tab3"] + "{\r" + dicTabs["tab4"]
+                    + ".ResolveAsync(context => \r" + dicTabs["tab3"] + "{\r" + dicTabs["tab4"]
                     + "Dictionary<string, object> args = new Dictionary<string, object>(); "
                     + "\r" + dicTabs["tab4"]
                     + "args.Add(\"pagination\", context.GetArgument<object>(\"pagination\"));"
@@ -635,7 +635,7 @@ namespace GraphQL.Code.Generator
                     + ") => " + "\r" + dicTabs["tab5"] + "this." + repositoryPrivateMemberName + ".Get" + propertyName
                     + "By" + /*repositoryMethodByClause + "Id*/ PkOrFkIdFieldName + "Async(args, context.SubFields.Keys, " + batchLoaderParams + "));\r"
                     + (!isGenericType && matchingParentIdField.PropertyType.FullName.ToLower().Contains("nullable") ? dicTabs["tab5"] : dicTabs["tab4"])
-                    + "return await loader.LoadAsync(("
+                    + "return loader.LoadAsync(("
                     + (isGenericType ? IdFieldProperty.PropertyType.Name : matchingParentIdPropertyType.Name)
                     + ") context.Source."
                     + (isGenericType ? IdFieldName : matchingParentIdField.Name) + ");"
