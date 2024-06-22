@@ -921,7 +921,7 @@ namespace GraphQL.Code.Generator
                         }
                         else
                             resolverReturn += "\r" + dicTabs["tab5"] + "context.GetArgument<" + p.CSharpParameterType.Name
-                            + ">(\"" + Utility.getCamelCaseString(p.ParameterName) + "\", context.SubFields.Keys));";
+                            + ">(\"" + Utility.getCamelCaseString(p.ParameterName) + "\"), context.SubFields.Keys);";
                         /* Commenting this as we'll not use Parent Id's and bool fields as paremeters for repository methods, rather we'll use
          * SearhInputType and PaginationInputType parameters (from GraphQL.Extension package) only.
                         + ((p.CSharpParameterType.IsGenericType && p.CSharpParameterType.GenericTypeArguments[0].Name == "Boolean")
@@ -1167,9 +1167,9 @@ namespace GraphQL.Code.Generator
                     tabs = $"\r{dicTabs["tab4"]}";
                     arrayTypeMethodStatements = $"var res = this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}"
                     + $"{ tabs}.AsNoTracking(){tabs}";
-                    arrayTypeMethodStatements += $".WhereWithDistinctBy((conditionalArguments, " +
+                    arrayTypeMethodStatements += $".WhereWithDistinctBy(conditionalArguments, " +
                         $"this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}, " +
-                        $"{m.Value.IdsParamerterName}, \"{m.Value.WhereClauseIdFieldName}\")){tabs}" +
+                        $"{m.Value.IdsParamerterName}, \"{m.Value.WhereClauseIdFieldName}\"){tabs}" +
                         $".Select(selectionFields){tabs}" +
                         $".Pagination(conditionalArguments){tabs}.ToList();";
 
