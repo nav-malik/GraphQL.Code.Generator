@@ -182,7 +182,7 @@ namespace GraphQL.Code.Generator
             /// object then it will be false.
             /// </summary>
             public bool IsArray;
-            public bool IsTotal = false;
+            public bool IsGroupBy = false;
             public List<QueryParameterMapping> ParameterMappings;
         }
 
@@ -462,7 +462,7 @@ namespace GraphQL.Code.Generator
                     ReturnTypeBaseEntityName = "IntGraph",
                     ReturnTypeBaseEntityFullName = "int",
                     IsArray = false,
-                    IsTotal = true,
+                    IsGroupBy = true,
                     ContextProtpertyName = typeBaseEntityNamePlural,
                     ParameterMappings =
                         new List<QueryParameterMapping>()
@@ -490,6 +490,29 @@ namespace GraphQL.Code.Generator
                             new QueryParameterMapping
                             {
                                 ParameterName = "groupBy", GraphQLParameterType = "GroupByInputType", CSharpParameterType = null,
+                                IsNullable = true
+                            }
+                        }
+                });
+            }
+
+            string groupByOperationOnEntityName = "GroupByOperationOn" + typeBaseEntityNamePlural;
+
+            if (!dicQueryFieldNamesAndParamsListWithTypes.ContainsKey(groupByOperationOnEntityName))
+            {
+                dicQueryFieldNamesAndParamsListWithTypes.Add(groupByOperationOnEntityName, new QueryRepositoryMethodMapping
+                {
+                    ReturnTypeBaseEntityName = "GroupValuePair",
+                    ReturnTypeBaseEntityFullName = "GroupValuePair",
+                    IsArray = true,
+                    IsGroupBy = true,
+                    ContextProtpertyName = typeBaseEntityNamePlural,
+                    ParameterMappings =
+                        new List<QueryParameterMapping>()
+                        {                            
+                            new QueryParameterMapping
+                            {
+                                ParameterName = "groupByOperationOn", GraphQLParameterType = "GroupByOperationOnInputType", CSharpParameterType = null,
                                 IsNullable = true
                             }
                         }
@@ -915,7 +938,7 @@ namespace GraphQL.Code.Generator
                                 + Utility.getCamelCaseString(p.ParameterName) + ");";
                             if (!isContextParamAdded)
                             {
-                                resolverReturn += "\r" + dicTabs["tab5"] + "args" + (!m.Value.IsTotal ? ", context.SubFields.Keys" : "" ) +");";                                
+                                resolverReturn += "\r" + dicTabs["tab5"] + "args" + (!m.Value.IsGroupBy ? ", context.SubFields.Keys" : "" ) +");";                                
                                 isContextParamAdded = true;
                             }
                         }
@@ -1272,7 +1295,7 @@ namespace GraphQL.Code.Generator
                             {
                                 method.Parameters.Add(new CodeParameterDeclarationExpression("IDictionary<string, object>", "conditionalArguments"));
                                 methodInterface.Parameters.Add(new CodeParameterDeclarationExpression("IDictionary<string, object>", "conditionalArguments"));
-                                if (!m.Value.IsTotal)
+                                if (!m.Value.IsGroupBy)
                                 {
                                     method.Parameters.Add(new CodeParameterDeclarationExpression("IEnumerable<string>", "selectionFields"));
                                     methodInterface.Parameters.Add(new CodeParameterDeclarationExpression("IEnumerable<string>", "selectionFields"));
@@ -1281,14 +1304,14 @@ namespace GraphQL.Code.Generator
                             }
 
                         }
-                        if (!m.Value.IsArray && !m.Value.IsTotal)
+                        if (!m.Value.IsArray && !m.Value.IsGroupBy)
                         {
                             var firstParam = m.Value.ParameterMappings[0];
                             returnStatment += ".Select(selectionFields)\r" + dicTabs["tab3"];
                             returnStatment += ".Where(x => x." + firstParam.ParameterName + " == " + firstParam.ParameterName
                             + ")\r" + dicTabs["tab3"] + ".FirstOrDefault())";
                         }
-                        else if (!m.Value.IsTotal)
+                        else if (m.Value.IsArray && !m.Value.IsGroupBy)
                         {
                             //method.Comments.Add(new CodeCommentStatement("Generator will only generate code for 2 Nullable paramerter."));
                             //method.Comments.Add(new CodeCommentStatement("If there are more than 2 paramerter then add rest of the code."));
@@ -1317,7 +1340,7 @@ namespace GraphQL.Code.Generator
                             //create a function and send m.Value.ParameterMappings to it and then write code there.
                         }
 
-                        else 
+                        else if (!m.Value.IsArray && m.Value.IsGroupBy)
                         {
                             tabs = $"\r{dicTabs["tab4"]}";
                             arrayTypeMethodStatements = $"var res = this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}"
@@ -1332,6 +1355,20 @@ namespace GraphQL.Code.Generator
                             //        + ">(results)";
                             returnStatment = arrayTypeMethodStatements;
                             //create a function and send m.Value.ParameterMappings to it and then write code there.
+                        }
+
+                        else if (m.Value.IsArray && m.Value.IsGroupBy)
+                        {
+                            tabs = $"\r{dicTabs["tab4"]}";
+                            arrayTypeMethodStatements = $"var res = this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}"
+                            + $"{tabs}.AsNoTracking(){tabs}";
+                            arrayTypeMethodStatements += 
+                                $".GetListOfGroupValuePair(this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}, conditionalArguments) {tabs}" +                                
+                                $".AsEnumerable();\r\r{dicTabs["tab3"]}";
+                            arrayTypeMethodStatements +=
+                                $"return Task.FromResult(res)";
+
+                            returnStatment = arrayTypeMethodStatements;
                         }
 
                     }

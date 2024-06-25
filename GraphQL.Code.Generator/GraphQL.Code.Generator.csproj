@@ -8,13 +8,11 @@
     <Description>This package will generate GraphQL classes (Type, Query, and Repository) dynamically from Domain Entity classes. Use the Configuration class and sub classes to provide the inputs to the Generator.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>GraphQL GraphQL.Code.Generator GraphQL-dotnet GraphQL.dotnet GraphQL-Schema GraphQL.Schema.Generator GraphQL.EnitityFramework GraphQLEntity GraphQL.Entity EnitityFramework.GraphQL Entity.GraphQL EntityGraphQL</PackageTags>
-    <PackageReleaseNotes>1.4.0.2 removed async avait from DataLoader LoadAsync in child fields resolver as its removed in latest version of DataLoader.
-1.4.0.1 Minor fixes
-1.4.0 Added Distinct, DistinctBy, and GroupBy functionalities.</PackageReleaseNotes>
-    <Version>1.4.0.2</Version>
-    <AssemblyVersion>1.4.0.2</AssemblyVersion>
+    <PackageReleaseNotes>1.5.0  Added GroupByOperationOn queries and related repository. This will provide option to group by on multiple fields (, separated fields) and then perform an operation like count, sum, max or min on another field. Also provide option to apply where and pagination on group by.</PackageReleaseNotes>
+    <Version>1.5.0</Version>
+    <AssemblyVersion>1.5.0</AssemblyVersion>
     <PackageIcon>GraphQL-Icon.png</PackageIcon>
-    <FileVersion>1.4.0.2</FileVersion>
+    <FileVersion>1.5.0</FileVersion>
     <RepositoryUrl>https://github.com/nav-malik/GraphQL.Code.Generator</RepositoryUrl>
   </PropertyGroup>
 
