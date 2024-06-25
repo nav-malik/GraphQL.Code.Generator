@@ -222,7 +222,8 @@ namespace GraphQL.Code.Generator
             "System.Threading", "System.Threading.Tasks", 
             Configuration.ORMType == Configuration.ORMTypes.EF6 ? "System.Data.Entity" 
                 : Configuration.ORMType == Configuration.ORMTypes.EFCore ? "Microsoft.EntityFrameworkCore" : "", 
-            "Linq.Extension" };
+            "Linq.Extension",  "Linq.Extension.Grouping", "Linq.Extension.Unique", "Linq.Extension.Pagination",
+            "Linq.Extension.Filter"};
 
         private static readonly string[] defaulAdditionalNamespacesForGraphQLQuery = { "System", "GraphQL.Types.Relay.DataObjects",
             "GraphQL.Types", "GraphQL.Extension.Types.Filter", "GraphQL.Extension.Types.Pagination",
