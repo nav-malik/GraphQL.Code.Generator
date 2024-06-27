@@ -1328,7 +1328,7 @@ namespace GraphQL.Code.Generator
                             arrayTypeMethodStatements = $"var res = this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}"
                             + $"{ tabs}.AsNoTracking(){tabs}";
                             arrayTypeMethodStatements += $".WhereWithDistinctBy(conditionalArguments, " +
-                                $"this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}, ','){tabs}" +
+                                $"this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}){tabs}" +
                                 $".Select(selectionFields){tabs}" +
                                 $".Pagination(conditionalArguments){tabs}" +                                
                                 $".ToList();\r\r{dicTabs["tab3"]}";
