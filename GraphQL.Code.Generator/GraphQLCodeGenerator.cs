@@ -1193,9 +1193,25 @@ namespace GraphQL.Code.Generator
                     + $"{ tabs}.AsNoTracking(){tabs}";
                     arrayTypeMethodStatements += $".WhereWithDistinctBy(conditionalArguments, " +
                         $"this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}, " +
-                        $"{m.Value.IdsParamerterName}, \"{m.Value.WhereClauseIdFieldName}\"){tabs}" +
-                        $".Select(selectionFields){tabs}" +
-                        $".Pagination(conditionalArguments){tabs}.ToList();";
+                        $"{m.Value.IdsParamerterName}, \"{m.Value.WhereClauseIdFieldName}\"){tabs}";
+                    if (Configuration.ORMType == Configuration.ORMTypes.EFCore)
+                    {
+                        arrayTypeMethodStatements +=
+                            $".Select(selectionFields){tabs}" +
+                            $".Pagination(conditionalArguments){tabs}" +
+                            $".ToList();";
+                    }
+                    else if (Configuration.ORMType == Configuration.ORMTypes.EF6)
+                    {
+                        arrayTypeMethodStatements +=
+                            $".Pagination(conditionalArguments){tabs}.Select(LinqDynamicExtension" +
+                            $".DynamicSelectGeneratorAnomouysType\r{dicTabs["tab5"]}<{m.Value.ReturnTypeBaseEntityFullName}>" +
+                            $"(selectionFields)){tabs}.ToList(){tabs}.ToNonAnonymousList(typeof(" +
+                            $"{m.Value.ReturnTypeBaseEntityFullName}));";
+                    }
+
+                    //$".Select(selectionFields){tabs}" +
+                    //    $".Pagination(conditionalArguments){tabs}.ToList();";
 
                     if (m.Value.IsByParent)
                     {
@@ -1308,9 +1324,20 @@ namespace GraphQL.Code.Generator
                         if (!m.Value.IsArray && !m.Value.IsGroupBy)
                         {
                             var firstParam = m.Value.ParameterMappings[0];
-                            returnStatment += ".Select(selectionFields)\r" + dicTabs["tab3"];
+
                             returnStatment += ".Where(x => x." + firstParam.ParameterName + " == " + firstParam.ParameterName
-                            + ")\r" + dicTabs["tab3"] + ".FirstOrDefault())";
+                            + ")\r" + dicTabs["tab3"];
+                            if (Configuration.ORMType == Configuration.ORMTypes.EFCore)
+                            {
+                                returnStatment += ".Select(selectionFields)\r" + dicTabs["tab3"];
+                            }
+                            else if (Configuration.ORMType == Configuration.ORMTypes.EF6)
+                            {
+                                returnStatment += ".Select(LinqDynamicExtension" +
+                                    $".DynamicSelectGeneratorAnomouysType\r{dicTabs["tab5"]}<{m.Value.ReturnTypeBaseEntityFullName}>" +
+                                    $"(selectionFields))\r" + dicTabs["tab3"];                                
+                            }                            
+                            returnStatment += ".FirstOrDefault())";
                         }
                         else if (m.Value.IsArray && !m.Value.IsGroupBy)
                         {
@@ -1328,12 +1355,27 @@ namespace GraphQL.Code.Generator
                             arrayTypeMethodStatements = $"var res = this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}"
                             + $"{ tabs}.AsNoTracking(){tabs}";
                             arrayTypeMethodStatements += $".WhereWithDistinctBy(conditionalArguments, " +
-                                $"this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}){tabs}" +
-                                $".Select(selectionFields){tabs}" +
-                                $".Pagination(conditionalArguments){tabs}" +                                
-                                $".ToList();\r\r{dicTabs["tab3"]}";
-                            arrayTypeMethodStatements +=
-                                $"return Task.FromResult<IEnumerable<{m.Value.ReturnTypeBaseEntityFullName}>>(res)";
+                                $"this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}){tabs}";
+                            if (Configuration.ORMType == Configuration.ORMTypes.EFCore)
+                            {
+                                arrayTypeMethodStatements +=
+                                    $".Select(selectionFields){tabs}" +
+                                    $".Pagination(conditionalArguments){tabs}" +
+                                    $".ToList();\r\r{dicTabs["tab3"]}";
+                                arrayTypeMethodStatements +=
+                                    $"return Task.FromResult<IEnumerable<{m.Value.ReturnTypeBaseEntityFullName}>>(res)";
+                            }
+                            else if (Configuration.ORMType == Configuration.ORMTypes.EF6)
+                            {
+                                arrayTypeMethodStatements +=
+                                    $".Pagination(conditionalArguments){tabs}.Select(LinqDynamicExtension" +
+                                    $".DynamicSelectGeneratorAnomouysType\r{dicTabs["tab5"]}<{m.Value.ReturnTypeBaseEntityFullName}>" +
+                                    $"(selectionFields)){tabs}.ToList(){tabs}.ToNonAnonymousList(typeof(" +
+                                    $"{m.Value.ReturnTypeBaseEntityFullName}));\r\r{dicTabs["tab3"]}var results = (IEnumerable<" +
+                                    $"{ m.Value.ReturnTypeBaseEntityFullName }>) res;\r\r{dicTabs["tab3"]}";
+                                arrayTypeMethodStatements +=
+                                    $"return Task.FromResult<IEnumerable<{m.Value.ReturnTypeBaseEntityFullName}>>(results)";
+                            }                            
 
                             //arrayTypeMethodStatements += "\r" + dicTabs["tab3"] + "return Task.FromResult<" + returnTypePart
                             //        + ">(results)";
