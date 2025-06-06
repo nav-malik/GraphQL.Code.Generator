@@ -1,3 +1,5 @@
+1.6.1 Added field selection option in Repository EF6 methods for single object with Primary Key field. 
+
 1.6.0 Distinguish Repository methods implementation to match EFCore and EF6. 
 
 1.5.1 Remvoed delimiter character from WhereWithDistinctBy in Repository class methods. Now, delimiter is part of DistinctByInput.
