@@ -8,11 +8,11 @@
     <Description>This package will generate GraphQL classes (Type, Query, and Repository) dynamically from Domain Entity classes. Use the Configuration class and sub classes to provide the inputs to the Generator.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>GraphQL GraphQL.Code.Generator GraphQL-dotnet GraphQL.dotnet GraphQL-Schema GraphQL.Schema.Generator GraphQL.EnitityFramework GraphQLEntity GraphQL.Entity EnitityFramework.GraphQL Entity.GraphQL EntityGraphQL</PackageTags>
-    <PackageReleaseNotes>1.6.0 Distinguish Repository methods implementation to match EFCore and EF6. </PackageReleaseNotes>
-    <Version>1.6.0</Version>
-    <AssemblyVersion>1.6.0</AssemblyVersion>
+    <PackageReleaseNotes>1.6.1 Added field selection option in Repository EF6 methods for single object with Primary Key field. </PackageReleaseNotes>
+    <Version>1.6.1</Version>
+    <AssemblyVersion>1.6.1</AssemblyVersion>
     <PackageIcon>GraphQL-Icon.png</PackageIcon>
-    <FileVersion>1.6.0</FileVersion>
+    <FileVersion>1.6.1</FileVersion>
     <RepositoryUrl>https://github.com/nav-malik/GraphQL.Code.Generator</RepositoryUrl>
 	  <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>

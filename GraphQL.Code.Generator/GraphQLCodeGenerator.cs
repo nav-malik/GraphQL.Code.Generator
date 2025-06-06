@@ -1329,15 +1329,25 @@ namespace GraphQL.Code.Generator
                             + ")\r" + dicTabs["tab3"];
                             if (Configuration.ORMType == Configuration.ORMTypes.EFCore)
                             {
-                                returnStatment += ".Select(selectionFields)\r" + dicTabs["tab3"];
+                                returnStatment += ".Select(selectionFields)\r" + dicTabs["tab3"] + ".FirstOrDefault())";
                             }
                             else if (Configuration.ORMType == Configuration.ORMTypes.EF6)
                             {
-                                returnStatment += ".Select(LinqDynamicExtension" +
+                                arrayTypeMethodStatements = $"var res = this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}"
+                                    + $"{tabs}.AsNoTracking(){tabs}";
+                                arrayTypeMethodStatements += ".Where(x => x." + firstParam.ParameterName + " == " + firstParam.ParameterName
+                                    + $"){tabs}";
+
+                                arrayTypeMethodStatements += ".Select(LinqDynamicExtension" +
                                     $".DynamicSelectGeneratorAnomouysType\r{dicTabs["tab5"]}<{m.Value.ReturnTypeBaseEntityFullName}>" +
-                                    $"(selectionFields))\r" + dicTabs["tab3"];                                
+                                    $"(selectionFields)){tabs}.ToList(){tabs}.ToNonAnonymousList(typeof(" +
+                                    $"{m.Value.ReturnTypeBaseEntityFullName}));\r\r{dicTabs["tab3"]}var results = (IEnumerable<" +
+                                    $"{m.Value.ReturnTypeBaseEntityFullName}>)res;\r\r{dicTabs["tab3"]}";
+                                arrayTypeMethodStatements += $"return Task.FromResult<{m.Value.ReturnTypeBaseEntityFullName}>(results.FirstOrDefault())";
+                                //+ "\r" + dicTabs["tab3"];
+                                returnStatment = arrayTypeMethodStatements;
                             }                            
-                            returnStatment += ".FirstOrDefault())";
+                            //returnStatment += ".FirstOrDefault())";
                         }
                         else if (m.Value.IsArray && !m.Value.IsGroupBy)
                         {
@@ -1372,7 +1382,7 @@ namespace GraphQL.Code.Generator
                                     $".DynamicSelectGeneratorAnomouysType\r{dicTabs["tab5"]}<{m.Value.ReturnTypeBaseEntityFullName}>" +
                                     $"(selectionFields)){tabs}.ToList(){tabs}.ToNonAnonymousList(typeof(" +
                                     $"{m.Value.ReturnTypeBaseEntityFullName}));\r\r{dicTabs["tab3"]}var results = (IEnumerable<" +
-                                    $"{ m.Value.ReturnTypeBaseEntityFullName }>) res;\r\r{dicTabs["tab3"]}";
+                                    $"{ m.Value.ReturnTypeBaseEntityFullName }>)res;\r\r{dicTabs["tab3"]}";
                                 arrayTypeMethodStatements +=
                                     $"return Task.FromResult<IEnumerable<{m.Value.ReturnTypeBaseEntityFullName}>>(results)";
                             }                            
