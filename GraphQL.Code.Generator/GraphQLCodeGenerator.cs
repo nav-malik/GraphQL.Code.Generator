@@ -541,9 +541,9 @@ namespace GraphQL.Code.Generator
                     IsArray = true,
                     IsAggregated = true,
                     ContextProtpertyName = typeBaseEntityNamePlural,
-                    ParameterMappings =
+                    ParameterMappings = 
                         new List<QueryParameterMapping>()
-                        {
+                        {                            
                             new QueryParameterMapping
                             {
                                 ParameterName = "pagination", GraphQLParameterType = "PaginationInputType", CSharpParameterType = null,
@@ -556,6 +556,17 @@ namespace GraphQL.Code.Generator
                             }
                         }
                 });
+                if (Configuration.ORMType == Configuration.ORMTypes.EF6)
+                {
+                    var pgItem = dicQueryFieldNamesAndParamsListWithTypes[aggregatedEntityName]
+                        ?.ParameterMappings.Single(x => x.ParameterName == "pagination");
+                    if (pgItem != null)
+                    {
+                        dicQueryFieldNamesAndParamsListWithTypes[aggregatedEntityName]
+                        ?.ParameterMappings.Remove(pgItem);
+                    }
+                        
+                }
             }
 
             //dicRepositoryMethodNamesAndParamsListWithTypes.Add(typeBaseEntityName, new List<QueryParameterMapping>());
@@ -1448,10 +1459,8 @@ namespace GraphQL.Code.Generator
                                 else if (Configuration.ORMType == Configuration.ORMTypes.EF6)
                                 {
                                     arrayTypeMethodStatements +=
-                                        $".GroupByAggregation(conditionalArguments){tabs}" +
-                                        $".Pagination(conditionalArguments){tabs}.Select(LinqDynamicExtension" +
-                                        $".DynamicSelectGeneratorAnomouysType\r{dicTabs["tab5"]}<{m.Value.ReturnTypeBaseEntityFullName}>" +
-                                        $"(selectionFields)){tabs}.ToList(){tabs}.ToNonAnonymousList(typeof(" +
+                                        $".GroupByAggregationEF6(conditionalArguments){tabs}" +                                        
+                                        $".ToListAsync(){tabs}.Result{tabs}.ToNonAnonymousList(typeof(" +
                                         $"{m.Value.ReturnTypeBaseEntityFullName}));\r\r{dicTabs["tab3"]}var results = (IEnumerable<" +
                                         $"{m.Value.ReturnTypeBaseEntityFullName}>)res;\r\r{dicTabs["tab3"]}";
                                     arrayTypeMethodStatements +=

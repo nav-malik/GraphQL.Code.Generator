@@ -1,4 +1,6 @@
 
+1.8.0 Added GroupByAggregationEF6 methods for EF6 and .Net Framework support for Aggregated Library methods.
+
 1.7.0 Added Aggregation in Query and Repository, there will be new field in Query for every Entity that take Aggregation as input, it's required.
  GroupByAggregation will allow to perfom Count Distinct, Count, Sum, Min, and Max on a field other than in GroupBy field name list.
 
