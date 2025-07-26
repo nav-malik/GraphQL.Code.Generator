@@ -1,3 +1,7 @@
+
+1.7.0 Added Aggregation in Query and Repository, there will be new field in Query for every Entity that take Aggregation as input, it's required.
+ GroupByAggregation will allow to perfom Count Distinct, Count, Sum, Min, and Max on a field other than in GroupBy field name list.
+
 1.6.1 Added field selection option in Repository EF6 methods for single object with Primary Key field. 
 
 1.6.0 Distinguish Repository methods implementation to match EFCore and EF6. 
