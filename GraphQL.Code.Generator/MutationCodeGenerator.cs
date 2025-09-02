@@ -543,6 +543,7 @@ namespace GraphQL.Code.Generator
                                         ParameterName = "search",
                                         GraphQLParameterType = "SearchInputType",
                                         RepositoryParameterName = "conditionalArguments",
+                                        CSharpParameterTypeName = "IDictionary<string, object>",
                                         CSharpParameterTypeFullName = "IDictionary<string, object>",
                                         IsNullable = true
                                     },
@@ -612,6 +613,7 @@ namespace GraphQL.Code.Generator
                                         ParameterName = "search",
                                         GraphQLParameterType = "SearchInputType",
                                         RepositoryParameterName = "conditionalArguments",
+                                        CSharpParameterTypeName = "IDictionary<string, object>",
                                         CSharpParameterTypeFullName = "IDictionary<string, object>",
                                         IsNullable = true
                                     }
@@ -1120,7 +1122,7 @@ namespace GraphQL.Code.Generator
                         int index = 0;
                         foreach (var p in mr.MappingParameters)
                         {
-                            if (p.IsNullable)
+                            if (p.IsNullable && p.CSharpParameterTypeName != "bool")
                             {
                                 method.Parameters.Add(new CodeParameterDeclarationExpression(p.CSharpParameterTypeName, p.RepositoryParameterName));
                                 methodInterface.Parameters.Add(new CodeParameterDeclarationExpression(p.CSharpParameterTypeName, p.RepositoryParameterName));
