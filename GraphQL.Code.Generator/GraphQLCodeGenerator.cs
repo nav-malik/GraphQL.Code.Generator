@@ -1666,7 +1666,7 @@ namespace GraphQL.Code.Generator
                     {
                         CreateMutationInputTypeClasses(Configuration.InputDllNameAndPath, Configuration.MutationInputTypeClasses.InputTypeClassesNamespace);
                         if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.StoredProcedureAsMutation))
-                            AddStoredProceduresAsMutations(Configuration.InputDllNameAndPath);
+                            AddStoredProceduresAsMutations(Configuration.StoredProcedureAsMutation.InputDllNameAndPath);
                         if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.Mutation))
                             CreateMutationClass();
                         if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.MutationRepository))

@@ -262,6 +262,8 @@ namespace GraphQL.Code.Generator
 
         public static class StoredProcedureAsMutation
         {
+            public static string InputDllNameAndPath = string.Empty;
+
             public static bool IsDbContextBaseTypeNullAllowed = false;
             public static Regex DdContextBaseClassInclude = new Regex(pattern: @"^DbContext.*$", options: RegexOptions.IgnoreCase);
             public static Regex DdContextBaseClassExclude = null;

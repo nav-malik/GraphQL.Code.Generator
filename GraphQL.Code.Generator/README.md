@@ -1,3 +1,4 @@
+2.0.1 Added separate path for Stored Procedures and DB Context.
 
 2.0.0 Added Mutations Create, UpdateById, Update, DeleteById and Delete along with MutationInputTypes, CreateEntityInputType and 
 UpdateEntityInputType. CreateInputType will have required fields as Non-Nullable while UpdateInputType will have all fields nullable.
