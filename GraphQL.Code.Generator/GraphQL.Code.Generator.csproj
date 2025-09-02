@@ -5,12 +5,13 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Nav Malik</Authors>
-    <Description>This package will generate GraphQL classes (Type, Query, and Repository) dynamically from Domain Entity classes. Use the Configuration class and sub classes to provide the inputs to the Generator.</Description>
+    <Description>This package will generate GraphQL classes (Type, Query, Mutation, and Repository) dynamically from Domain Entity classes. Use the Configuration class and sub classes to provide the inputs to the Generator.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>GraphQL GraphQL.Code.Generator GraphQL-dotnet GraphQL.dotnet GraphQL-Schema GraphQL.Schema.Generator GraphQL.EnitityFramework GraphQLEntity GraphQL.Entity EnitityFramework.GraphQL Entity.GraphQL EntityGraphQL</PackageTags>
-    <PackageReleaseNotes>1.8.0 Added GroupByAggregationEF6 methods for EF6 and .Net Framework support for Aggregated Library methods.
-1.7.0 Added Aggregation in Query and Repository, there will be new field in Query for every Entity that take Aggregation as input, it's required. GroupByAggregation will allow to perfom Count Distinct, Count, Sum, Min, and Max on a field other than in GroupBy field name list.</PackageReleaseNotes>
-    <Version>1.8.0</Version>
+    <PackageReleaseNotes>2.0.0 Added Mutations Create, UpdateById, Update, DeleteById and Delete along with MutationInputTypes, CreateEntityInputType and UpdateEntityInputType. CreateInputType will have required fields as Non-Nullable while UpdateInputType will have all fields nullable.
+Added Mutation fields for Stored Procedures.
+Also, removed type: typeof(DateTimeGraphType) as its no longer needed and in GraphQL 9.x type will be removed from FieldBuilder.</PackageReleaseNotes>
+    <Version>2.0.0</Version>
     <PackageIcon>GraphQL-Icon.png</PackageIcon>
     <RepositoryUrl>https://github.com/nav-malik/GraphQL.Code.Generator</RepositoryUrl>
 	  <PackageReadmeFile>README.md</PackageReadmeFile>

@@ -14,8 +14,11 @@ namespace GraphQL.Code.Generator
             //Schema = 1,            
             Query = 2,
             Types = 4,
-            //Mutation = 8,
-            Repositoy = 16
+            Mutation = 8,
+            Repositoy = 16,
+            MutationInputTypes = 32,
+            MutationRepository = 64,
+            StoredProcedureAsMutation = 128,
         }
         public enum ORMTypes
         {
@@ -98,7 +101,7 @@ namespace GraphQL.Code.Generator
             /// </summary>
             public static string AdditionalCodeToBeAddedInConstructor = string.Empty;
 
-
+            public static bool ConvertByteTypeToStringGraphType = true;
         }
 
         public static class RepositoryClass
@@ -154,6 +157,126 @@ namespace GraphQL.Code.Generator
             /// <code>using My.Namespace.Xyz;</code>
             /// </summary>
             public static string AdditionalNamespaces = string.Empty;
+        }
+
+        public static class MutationInputTypeClasses
+        {           
+            public static string ClassSuffix = "InputType";
+            public static string NameSuffix = "Input";
+            public static string FileExtension = ".cs";
+            public static string Outputpath = Path.GetDirectoryName(Path.GetDirectoryName(Directory.GetCurrentDirectory()))
+                + "/GraphQLTypes/";
+
+            public static string InputTypeClassesNamespace = string.Empty;
+
+            public static Regex EntityClassesNamespacesInclude = null;
+            public static Regex EntityClassesNamespacesExclude = null;
+            public static Regex EntityClassNamesInclude = null;
+            public static Regex EntityClassNamesExclude = null;
+
+            /// <summary>
+            /// Add comma separated full namespace name.
+            /// <code>"My.Namespace.Abc, My.Namespace.Xyz"</code>
+            /// <para>This will be translated as:</para>
+            /// <code>using My.Namespace.Abc;</code>
+            /// <code>using My.Namespace.Xyz;</code>
+            /// </summary>
+            public static string AdditionalNamespaces = string.Empty;
+
+            /*
+            ///<summary>
+            ///If true then all fields in the input type for muatations are nullable, 
+            ///by default it will depend on underlying Entity classs, apart of single Key field all required 
+            /// </summary>
+            public static bool MakeAllFieldsNullable = false;
+
+            ///<summary>
+            /// If true then it will create separate input type with all fields nullable.
+            /// This will be helpful in update mutation to update only few fields and keep original input type coupled with Entity.
+            /// </summary>
+            public static bool CreateSeparateInputTypeWithAllNullableFields = false;
+            ///<summary>
+            ///This will use after class and before ClassPostfix
+            /// </summary>
+            public static string NullableTypeMidfix = "Nullable";
+            */
+
+            public static string TypeClassSuffix = "Type";
+        }
+
+        public static class MutationRepositoryClass
+        {
+            public static string RepositoryClassesNamespace = string.Empty;
+
+            public static string DBContextPrivateMember = string.Empty;
+            public static string DBContextConstructorParameter = string.Empty;
+
+            public static string RepositoryClassName = string.Empty;
+
+            public static string FileExtension = ".cs";
+            public static string Outputpath = Path.GetDirectoryName(Path.GetDirectoryName(Directory.GetCurrentDirectory()))
+                + "/GraphQLTypes/";
+
+            /// <summary>
+            /// Add comma separated full namespace name.
+            /// <code>"My.Namespace.Abc, My.Namespace.Xyz"</code>
+            /// <para>This will be translated as:</para>
+            /// <code>using My.Namespace.Abc;</code>
+            /// <code>using My.Namespace.Xyz;</code>
+            /// </summary>
+            public static string AdditionalNamespaces = string.Empty;
+            /// <summary>
+            /// Add IEnumerable of string with method names which Generator shouldn't generate.
+            /// <para>This can be use after initial code generation as some methods need to be changed for their implementation.</para>
+            /// <para>If any generated method need to be change, then move it to other part of the Partial Class as at Code regeneration
+            /// those custom implementation will be overriden.</para>
+            /// </summary>
+            public static IEnumerable<string> MethodExcludeFilter;
+            public static bool IsMethodExcludeFilterApplyToInterface = false;
+        }
+
+        public static class MutationClass
+        {
+            public static string RepositoryPrivateMember = string.Empty;
+
+            public static string RepositoryConstructorParameter = string.Empty;
+
+            public static string MutationClassNamespace = string.Empty;
+
+            public static string MutationClassName = string.Empty;
+
+            public static string FileExtension = ".cs";
+            public static string Outputpath = Path.GetDirectoryName(Path.GetDirectoryName(Directory.GetCurrentDirectory()))
+                + "/GraphQLTypes/";
+
+            /// <summary>
+            /// Add comma separated full namespace name.
+            /// <code>"My.Namespace.Abc, My.Namespace.Xyz"</code>
+            /// <para>This will be translated as:</para>
+            /// <code>using My.Namespace.Abc;</code>
+            /// <code>using My.Namespace.Xyz;</code>
+            /// </summary>
+            public static string AdditionalNamespaces = string.Empty;
+            
+        }
+
+        public static class StoredProcedureAsMutation
+        {
+            public static bool IsDbContextBaseTypeNullAllowed = false;
+            public static Regex DdContextBaseClassInclude = new Regex(pattern: @"^DbContext.*$", options: RegexOptions.IgnoreCase);
+            public static Regex DdContextBaseClassExclude = null;
+            public static Regex DdContextClassNameInclude = null;
+            public static Regex DdContextClassNameExclude = null;
+
+            public static Regex MethodInclude = null;
+            public static Regex MethodExclude = null;
+
+            public static bool IsAnyMethodReturnTypeAllowed = false;
+            public static bool IsMethodReturnTypeBaseTypeNullAllowed = false;
+            public static Regex MethodReturnTypeBaseClassInclude = new Regex(pattern: @"^valuetype.*$", options: RegexOptions.IgnoreCase);
+
+            public static bool IgnoreMethodsWithLastOutParam = true;
+            public static Regex LastOutParameterNameExclude = new Regex(pattern: @"^procResult.*$", options: RegexOptions.IgnoreCase);
         }
     }
 }

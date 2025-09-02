@@ -1,4 +1,9 @@
 
+2.0.0 Added Mutations Create, UpdateById, Update, DeleteById and Delete along with MutationInputTypes, CreateEntityInputType and 
+UpdateEntityInputType. CreateInputType will have required fields as Non-Nullable while UpdateInputType will have all fields nullable.
+Added Mutation fields for Stored Procedures.
+Also, removed type: typeof(DateTimeGraphType) as its no longer needed and in GraphQL 9.x type will be removed from FieldBuilder.
+
 1.8.0 Added GroupByAggregationEF6 methods for EF6 and .Net Framework support for Aggregated Library methods.
 
 1.7.0 Added Aggregation in Query and Repository, there will be new field in Query for every Entity that take Aggregation as input, it's required.

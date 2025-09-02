@@ -26,7 +26,7 @@ using System.Text.RegularExpressions;
 
 namespace GraphQL.Code.Generator
 {
-    public static class GraphQLCodeGenerator
+    public static partial class GraphQLCodeGenerator
     {
         private static Type GetUnderlyingType(this Type source)
         {
@@ -196,6 +196,7 @@ namespace GraphQL.Code.Generator
             public List<QueryParameterMapping> ParameterMappings;
         }
 
+        
         private static Assembly assembly = null;
         private static int generatedFilesCount = 0;
         private static IDictionary<string, LogElement> generatedFilesLog;
@@ -204,7 +205,7 @@ namespace GraphQL.Code.Generator
         private static Pluralizer pluralizationService;
 
         private static CodeCompileUnit targetUnit;
-        private static CodeTypeDeclaration typeClass, queryClass, repositoryClass, repositoryInterface;
+        private static CodeTypeDeclaration typeClass, queryClass, repositoryClass, repositoryInterface, mutationClass;
         private static Dictionary<string, string> dicTabs = new Dictionary<string, string>();
         /// <summary>
         /// Key f
@@ -235,9 +236,11 @@ namespace GraphQL.Code.Generator
             "Linq.Extension",  "Linq.Extension.Grouping", "Linq.Extension.Unique", "Linq.Extension.Pagination",
             "Linq.Extension.Filter"};
 
-        private static readonly string[] defaulAdditionalNamespacesForGraphQLQuery = { "System", "GraphQL.Types.Relay.DataObjects",
+        private static readonly string[] defaulAdditionalNamespacesForGraphQLQuery = { "System", 
             "GraphQL.Types", "GraphQL.Extension.Types.Filter", "GraphQL.Extension.Types.Pagination",
         "GraphQL.Extension.Types.Unique", "GraphQL.Extension.Types.Grouping", "GraphQL.Extension.Types.Aggregation"};
+
+        
 
         private static void AddField(string fieldName,
             string fieldTypeFullName, MemberAttributes fieldAttributes, ref CodeTypeDeclaration _targetClass)
@@ -252,73 +255,7 @@ namespace GraphQL.Code.Generator
             //(new CodeSnippetExpression("typeof("+ fieldTypeFullName +")"));
             _targetClass.Members.Add(field);
         }
-
-        private static void AddProperty(string fieldName, string propertyName
-            , string propertyTypeFullName, MemberAttributes propertyAttributes, bool hasGet, bool hasSet)
-        {
-
-            CodeMemberProperty property = new CodeMemberProperty();
-            property.Attributes = propertyAttributes;
-            property.Name = propertyName;
-            property.HasGet = hasGet;
-            property.HasSet = hasGet;
-            if (hasGet)
-            {
-                property.Type = new CodeTypeReference(propertyTypeFullName);
-                property.GetStatements.Add(new CodeMethodReturnStatement(
-                    new CodeFieldReferenceExpression(
-                    new CodeThisReferenceExpression(), fieldName)));
-            }
-            if (hasSet)
-            {
-
-                property.SetStatements.Add(new CodeAssignStatement(
-                    new CodeFieldReferenceExpression(
-                    new CodeThisReferenceExpression(), fieldName), new CodeSnippetExpression("value")
-                    ));
-            }
-            typeClass.Members.Add(property);
-        }
-
-        private static void AddMethod()
-        {
-            // Declaring a ToString method
-            CodeMemberMethod toStringMethod = new CodeMemberMethod();
-            toStringMethod.Attributes =
-                MemberAttributes.Public | MemberAttributes.Override;
-            toStringMethod.Name = "ToString";
-            toStringMethod.ReturnType =
-                new CodeTypeReference("Task<ILookup<int, GlobalApproverPrimaryApprover>>");
-
-            CodeFieldReferenceExpression widthReference =
-                new CodeFieldReferenceExpression(
-                new CodeThisReferenceExpression(), "Width");
-            CodeFieldReferenceExpression heightReference =
-                new CodeFieldReferenceExpression(
-                new CodeThisReferenceExpression(), "Height");
-            CodeFieldReferenceExpression areaReference =
-                new CodeFieldReferenceExpression(
-                new CodeThisReferenceExpression(), "Area");
-
-            // Declaring a return statement for method ToString.
-            CodeMethodReturnStatement returnStatement =
-                new CodeMethodReturnStatement();
-
-            // This statement returns a string representation of the width,
-            // height, and area.
-            string formattedOutput = "The object:" + Environment.NewLine +
-                " width = {0}," + Environment.NewLine +
-                " height = {1}," + Environment.NewLine +
-                " area = {2}";
-            returnStatement.Expression =
-                new CodeMethodInvokeExpression(
-                new CodeTypeReferenceExpression("System.String"), "Format",
-                new CodePrimitiveExpression(formattedOutput),
-                widthReference, heightReference, areaReference);
-            toStringMethod.Statements.Add(returnStatement);
-            typeClass.Members.Add(toStringMethod);
-        }
-
+       
         private static void AddTypeConstructor(string typeBaseEntityName, string typeBaseEntityFullName
             , string GraphQLGeneratedTypesClassNamePostfix, PropertyInfo[] properties, FieldInfo[] fields
             , IDictionary<string, string> parameters, IList<string> parameterToFieldAssignmentStatments
@@ -378,6 +315,8 @@ namespace GraphQL.Code.Generator
                         dicEntitiesIdFieldName.Add(typeBaseEntityName, IdFieldProperty.Name);
                     else
                         dicEntitiesIdFieldName[typeBaseEntityName] = IdFieldProperty.Name;
+                    //dicEntitiesIdFieldName shouild contain list of properties rather than name of the first key
+                    // this should be for all keys, if a table has multi keys (composite key intead of identity)
                 }
             }
             
@@ -662,7 +601,8 @@ namespace GraphQL.Code.Generator
                             ("Field(x => x." + prop.Name + ", nullable: true)"));
                     }
                     else */
-                    if (prop.PropertyType.FullName.ToLower().Contains("byte"))
+                    if (prop.PropertyType.FullName.ToLower().Contains("byte") 
+                        && Configuration.TypeClasses.ConvertByteTypeToStringGraphType)
                     {
                         constructor.Statements.Add(new CodeSnippetExpression
                             ("Field<StringGraphType>(\"" + Utility.getCamelCaseString(prop.Name) + "\" " + nullableString
@@ -671,9 +611,9 @@ namespace GraphQL.Code.Generator
                             ? "System.Text.Encoding.Default.GetString(context.Source." + prop.Name
                             : "System.Convert.ToString(" + prop.Name) + "))"));
                     }
-                    else if (prop.PropertyType.FullName.ToLower().Contains("date"))
-                        constructor.Statements.Add(new CodeSnippetExpression("Field(x => x." + prop.Name + nullableString
-                            + ", type: typeof(DateTimeGraphType))"));
+                    //else if (prop.PropertyType.FullName.ToLower().Contains("date"))
+                    //    constructor.Statements.Add(new CodeSnippetExpression("Field(x => x." + prop.Name + nullableString
+                    //        + ", type: typeof(DateTimeGraphType))"));
                     else
                         constructor.Statements.Add(new CodeSnippetExpression("Field(x => x." + prop.Name + nullableString + ")"));
                 }
@@ -844,7 +784,8 @@ namespace GraphQL.Code.Generator
                     else
                         typeName = tc.Name;
 
-                    if (!generatedFilesLog.ContainsKey(typeName + classPostfix + fileExtension))
+                    if (!generatedFilesLog.ContainsKey(typeName + classPostfix + fileExtension)
+                        && Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.Types))
                     {
                         generatedFilesLog.Add(typeName + classPostfix + fileExtension, new LogElement());
                     }
@@ -910,22 +851,30 @@ namespace GraphQL.Code.Generator
                     targetUnit.Namespaces.Clear();
                     targetUnit.Namespaces.Add(typesNamespace);
 
-                    GenerateCSharpCode(typeName + classPostfix + fileExtension, outputpath);
+                    if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.Types))
+                        GenerateCSharpCode(typeName + classPostfix + fileExtension, outputpath);
                 }
                 catch (Exception ex)
                 {
-                    var logElement = new LogElement();
-                    logElement.exception = ex;
-                    logElement.isException = true;
-
-                    if (!generatedFilesLog.ContainsKey(typeName + classPostfix + fileExtension))
+                    if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.Types))
                     {
-                        generatedFilesLog.Add(typeName + classPostfix + fileExtension, logElement);
+                        if (!generatedFilesLog.ContainsKey(typeName + classPostfix + fileExtension))
+                        {
+                            var logElement = new LogElement();
+                            logElement.exception = ex;
+                            logElement.isException = true;
+                            generatedFilesLog.Add(typeName + classPostfix + fileExtension, logElement);
+                        }
+                        else
+                        {
+                            var logEl = generatedFilesLog[typeName + classPostfix + fileExtension];
+                            logEl.isException = true;
+                            logEl.exception = ex;
+                        }
                     }
                 }
             }
-        }
-
+        }                
         private static void AddQueryConstructor(IDictionary<string, string> parameters,
             IList<string> parameterToFieldAssignmentStatments, string repositoryPrivateMemberName)
         {
@@ -1553,100 +1502,7 @@ namespace GraphQL.Code.Generator
                 logElementInterface.isException = true;
             }
         }
-
-        private static string RepositoryNullableParamsCode(string contextPrivateMemberName, string contextPropretyName
-           , List<QueryParameterMapping> parameterMappings)
-        {
-            string strResultCode = "\r" + dicTabs["tab3"];
-            string strBoolLocalVariables = "";
-            string AllIfPart = "if (";
-            string AllResultPart = "results = this." + contextPrivateMemberName + "." + contextPropretyName
-                + "\r" + dicTabs["tab5"] + ".Where(x => ";
-            string ElsePart = "else\r" + dicTabs["tab3"] + "{\r" + dicTabs["tab4"]
-                         + "results = this." + contextPrivateMemberName + "." + contextPropretyName + "\r" + dicTabs["tab5"]
-                        + ".ToList();\r" + dicTabs["tab3"] + "}\r";
-            string ElseIfResultPart = "";
-            string ElseIfMultipleIfPart, ElseIfMultipleResultPart, ElseIfMultipleTotal = "";
-            int index = 0;
-
-            if (parameterMappings != null && parameterMappings.Count > 0)
-            {
-                foreach (var p in parameterMappings)
-                {
-                    strBoolLocalVariables += p.CSharpParameterType.FullName.ToLower().Contains("boolean")
-                        ? "var b" + p.ParameterName + " = Convert.ToBoolean(" + p.ParameterName + ");\r" + dicTabs["tab3"] : "";
-                    AllIfPart += p.ParameterName + " != null " +
-                        (p.CSharpParameterType.FullName.ToLower().Contains("boolean") ? "" : "&& " + p.ParameterName + ".Value > 0")
-                        + ((index < parameterMappings.Count - 1 && parameterMappings.Count > 1) ? " && "
-                        : (index == parameterMappings.Count - 1) ? ")\r" + dicTabs["tab3"] + "{\r" + dicTabs["tab4"] : "");
-                    AllResultPart += "x." + p.ParameterName + " == "
-                        + (p.CSharpParameterType.FullName.ToLower().Contains("boolean") ? "b" : "") + p.ParameterName
-                         + ((index < parameterMappings.Count - 1 && parameterMappings.Count > 1) ? " && "
-                        : (index == parameterMappings.Count - 1) ? ")\r" + dicTabs["tab5"] + ".ToList();\r" + dicTabs["tab3"] + "}\r"
-                        + dicTabs["tab3"] : "");
-                    ElseIfResultPart += "else if (" + p.ParameterName + " != null " +
-                        (p.CSharpParameterType.FullName.ToLower().Contains("boolean") ? "" : "&& " + p.ParameterName + ".Value > 0") +
-                        ")\r"
-                        + dicTabs["tab3"] + "{\r" + dicTabs["tab4"] +
-                        "results = this." + contextPrivateMemberName + "." + contextPropretyName + "\r" + dicTabs["tab5"]
-                        + ".Where(x => x." + p.ParameterName + " == "
-                        + (p.CSharpParameterType.FullName.ToLower().Contains("boolean") ? "b" : "") + p.ParameterName
-                        + ")\r" + dicTabs["tab5"] + ".ToList();\r"
-                        + dicTabs["tab3"] + "}\r" + dicTabs["tab3"];
-                    index++;
-                }
-                int[] arrayOfIndicesOfParams = Utility.getArrayOfIndicesOfList(parameterMappings.Count);
-                for (int i = parameterMappings.Count - 1; i > 1; i--)
-                {
-                    Utility.listOfArray.Clear();
-                    Utility.getCombination(arrayOfIndicesOfParams, arrayOfIndicesOfParams.Length, i);
-                    foreach (var data in Utility.listOfArray)
-                    {
-                        ElseIfMultipleIfPart = "else if(";
-                        ElseIfMultipleResultPart = "results = this." + contextPrivateMemberName + "." + contextPropretyName
-                            + "\r" + dicTabs["tab5"] + ".Where(x => ";
-                        for (int j = 0; j < data.Length; j++)
-                        {
-                            ElseIfMultipleIfPart += parameterMappings[data[j]].ParameterName + " != null " +
-                                (parameterMappings[data[j]].CSharpParameterType.FullName.ToLower().Contains("boolean") ? ""
-                                : "&& " + parameterMappings[data[j]].ParameterName + ".Value > 0")
-
-                                + ((j < data.Length - 1 && data.Length > 1) ? " && "
-                                : (j == data.Length - 1) ? ")\r" + dicTabs["tab3"] + "{\r" + dicTabs["tab4"] : "");
-                            ElseIfMultipleResultPart += "x." + parameterMappings[data[j]].ParameterName + " == "
-                                + (parameterMappings[data[j]].CSharpParameterType.FullName.ToLower().Contains("boolean") ? "b"
-                                : "") + parameterMappings[data[j]].ParameterName
-                                + ((j < data.Length - 1 && data.Length > 1) ? " && "
-                                : (j == data.Length - 1) ? ")\r" + dicTabs["tab5"] + ".ToList();\r" + dicTabs["tab3"] + "}\r"
-                                + dicTabs["tab3"] : "");
-                        }
-                        ElseIfMultipleTotal += ElseIfMultipleIfPart + ElseIfMultipleResultPart;
-                    }
-                }
-
-
-                strResultCode += strBoolLocalVariables + AllIfPart + AllResultPart + ElseIfMultipleTotal + (parameterMappings.Count > 1 ? ElseIfResultPart : "") + ElsePart;
-            }
-
-            return strResultCode;
-        }
-
-        private static KeyValuePair<PropertyInfo, ForeignKeyAttribute> getFKPropert(string EntityFullName, string FieldName)
-        {
-            KeyValuePair<PropertyInfo, ForeignKeyAttribute> FKProperty = default;
-            var type = assembly.GetType(EntityFullName);
-            if (type != null)
-            {
-                FKProperty = type.GetProperties()
-                    .Where(x => x.Name == FieldName && x.GetCustomAttribute<ForeignKeyAttribute>() != null)
-                .Select(f => new { property = f, fkAttribute = f.GetCustomAttribute<ForeignKeyAttribute>() })
-                .ToDictionary(x=> x.property, x=> x.fkAttribute)
-                .FirstOrDefault();
-            }
-
-            return FKProperty;
-        }
-
+        
         private static string getPkOrFkFieldName(string EntityFullName, string EntityName, PropertyInfo fieldProperty)
         {
             string IdFieldName = string.Empty;
@@ -1784,20 +1640,38 @@ namespace GraphQL.Code.Generator
             generatedFilesLog = new Dictionary<string, LogElement>();
 
             targetUnit = new CodeCompileUnit();
-            if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.Types))
+            //if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.Types)
+            //    || Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.MutationInputTypes))
             {
                 Exception typeClassesException = null;
                 try
                 {
-
-                    dicQueryFieldNamesAndParamsListWithTypes = new Dictionary<string, QueryRepositoryMethodMapping>();
-                    dicRepositoryMethodNamesAndParamsListWithTypes = new Dictionary<string, List<QueryParameterMapping>>();
-                    dicRepositoryMethodsForLoader = new Dictionary<string, LoaderRepositoryMapping>();
-                    CreateTypeClasses(Configuration.InputDllNameAndPath, Configuration.TypeClasses.TypeClassesNamespace);
-                    if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.Repositoy))
-                        CreateRepositoryClass(Configuration.RepositoryClass.RepositoryClassesNamespace);
-                    if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.Query))
-                        CreateQueryClass();
+                    if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.Types)
+                        || Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.Repositoy)
+                        || Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.Query))
+                    {
+                        dicQueryFieldNamesAndParamsListWithTypes = new Dictionary<string, QueryRepositoryMethodMapping>();
+                        dicRepositoryMethodNamesAndParamsListWithTypes = new Dictionary<string, List<QueryParameterMapping>>();
+                        dicRepositoryMethodsForLoader = new Dictionary<string, LoaderRepositoryMapping>();
+                        CreateTypeClasses(Configuration.InputDllNameAndPath, Configuration.TypeClasses.TypeClassesNamespace);
+                        if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.Repositoy))
+                            CreateRepositoryClass(Configuration.RepositoryClass.RepositoryClassesNamespace);
+                        if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.Query))
+                            CreateQueryClass();
+                    }
+                    if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.MutationInputTypes)
+                        || Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.Mutation)
+                        || Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.MutationRepository)
+                        || Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.StoredProcedureAsMutation))
+                    {
+                        CreateMutationInputTypeClasses(Configuration.InputDllNameAndPath, Configuration.MutationInputTypeClasses.InputTypeClassesNamespace);
+                        if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.StoredProcedureAsMutation))
+                            AddStoredProceduresAsMutations(Configuration.InputDllNameAndPath);
+                        if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.Mutation))
+                            CreateMutationClass();
+                        if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.MutationRepository))
+                            CreateMutationRepositoryClass(Configuration.MutationRepositoryClass.RepositoryClassesNamespace);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -1867,6 +1741,66 @@ namespace GraphQL.Code.Generator
             pluralizationService = null;
             dicEntitiesIdFieldName = null;
             dicRepositoryMethodsForLoader = null;
+
+            dicMutationInputTypeFields = null;
+            dicMutationTypeRepositoryMapping = null;
+        }
+
+        private static string getGraphQLTypeFromDotNetType(string DotNetType)
+        {
+            string graphQLType = string.Empty;
+            
+
+            switch(DotNetType.ToLower())
+            {
+                case "string":
+                    graphQLType = "StringGraphType";
+                    break;
+                case "int":
+                case "int32":
+                    graphQLType = "IntGraphType";
+                    break;
+                case "double":
+                case "float":
+                case "single":
+                    graphQLType = "FloatGraphType";
+                    break;
+                case "bool":
+                case "boolean":
+                    graphQLType = "BooleanGraphType";
+                    break;
+                case "biginteger":
+                    graphQLType = "BigIntGraphType";
+                    break;
+                case "short":
+                case "int16":
+                    graphQLType = "ShortGraphType";
+                    break;
+                case "long":
+                case "int64":
+                    graphQLType = "LongGraphType";
+                    break;
+                case "datetime":
+                    graphQLType = "DateTimeGraphType";
+                    break;
+                case "dateonly":
+                    graphQLType = "DateOnlyGraphType";
+                    break;
+                case "timeonly":
+                    graphQLType = "TimeOnlyGraphType";
+                    break;
+                case "uri":
+                    graphQLType = "UriGraphType";
+                    break;
+                //case "bool":
+                //    graphQLType = "BooleanGraphType";
+                //    break;
+                default:
+                    graphQLType = string.Empty;
+                    break;
+            }
+
+            return graphQLType;
         }
     }
 }
