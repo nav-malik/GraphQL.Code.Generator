@@ -18,11 +18,12 @@ namespace GraphQL.Code.Generator
 
         private static readonly string[] defaulAdditionalNamespacesForGraphQLInputTypes = { "GraphQL.Types" };
 
-        private static readonly string[] defaulAdditionalNamespacesForMutationRepository = { "System", "System.Collections.Generic", "System.Linq",
-            "System.Threading", "System.Threading.Tasks", "System.Reflection",
-            Configuration.ORMType == Configuration.ORMTypes.EF6 ? "System.Data.Entity"
-                : Configuration.ORMType == Configuration.ORMTypes.EFCore ? "Microsoft.EntityFrameworkCore" : "",
-            "Linq.Extension", "Linq.Extension.Filter"};
+        private static readonly string[] defaulAdditionalNamespacesForMutationRepository = { "System", "System.Collections.Generic", 
+            "System.Linq", //"System.Threading", 
+            "System.Threading.Tasks", "System.Reflection", "System.ComponentModel.DataAnnotations",
+            //Configuration.ORMType == Configuration.ORMTypes.EF6 ? "System.Data.Entity"
+            //    : Configuration.ORMType == Configuration.ORMTypes.EFCore ? "Microsoft.EntityFrameworkCore" : "",
+            "Linq.Extension" };//, "Linq.Extension.Filter"};
         private class MutationInputTypeFieldMapping
         {
             public PropertyInfo Property;
@@ -1049,9 +1050,11 @@ namespace GraphQL.Code.Generator
 
                                 methodStatements += $"List<PropertyInfo> propertiesToBeUpdated = " +
                                     $"{inputTypeParam.RepositoryParameterName}.GetType().GetProperties(){tabs5}" +
-                                    $".Where(p => ({ignoreNullValues.RepositoryParameterName} && " +
+                                    $".Where(p => (({ignoreNullValues.RepositoryParameterName} && " +
                                     $"p.GetValue({inputTypeParam.RepositoryParameterName}) != null) " +
-                                    $"|| !{ignoreNullValues.RepositoryParameterName}){tabs5}.ToList();";
+                                    $"|| !{ignoreNullValues.RepositoryParameterName})" +
+                                    $"{tabs7} && p.GetCustomAttribute<KeyAttribute>() == null)" +
+                                    $"{tabs5}.ToList();";
 
                                 methodStatements += $"{tabs4}foreach (var prop in propertiesToBeUpdated){tabs4}";
                                 methodStatements += "{" + tabs5;
@@ -1071,17 +1074,33 @@ namespace GraphQL.Code.Generator
 
                             if (Configuration.ORMType == Configuration.ORMTypes.EFCore)
                             {
-                                returnStatment += ".Where(x => x." + firstParam + " == " + inputTypeParam.RepositoryParameterName + "." + firstParam
-                                + ")\r" + dicTabs["tab3"];
-
+                                if (isUpdateByField)
+                                {
+                                    returnStatment += ".Where(x => x." + firstParam + " == " + keyParam.RepositoryParameterName
+                                    + ")\r" + dicTabs["tab3"];
+                                }
+                                else if (isUpdateField)
+                                {
+                                    returnStatment += $".Where({iDicParam.RepositoryParameterName}){tabs3}";
+                                }
                                 returnStatment += ".Select(selectionFields)\r" + dicTabs["tab3"] + ".FirstOrDefault())";
                             }
                             else if (Configuration.ORMType == Configuration.ORMTypes.EF6)
                             {
                                 returnStatment = $"\r{dicTabs["tab3"]}var res = this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}"
                                     + $"{tabs4}.AsNoTracking(){tabs4}";
-                                returnStatment += ".Where(x => x." + firstParam + " == " + inputTypeParam.RepositoryParameterName + "." + firstParam
-                                    + $"){tabs4}";
+                                //returnStatment += ".Where(x => x." + firstParam + " == " + inputTypeParam.RepositoryParameterName + "." + firstParam
+                                //    + $"){tabs4}";
+
+                                if (isUpdateByField)
+                                {
+                                    returnStatment += ".Where(x => x." + firstParam + " == " + keyParam.RepositoryParameterName
+                                    + ")\r" + dicTabs["tab4"];
+                                }
+                                else if (isUpdateField)
+                                {
+                                    returnStatment += $".Where({iDicParam.RepositoryParameterName}){tabs4}";
+                                }
 
                                 returnStatment += ".Select(LinqDynamicExtension" +
                                     $".DynamicSelectGeneratorAnomouysType\r{dicTabs["tab5"]}<{returnTypePart}>" +

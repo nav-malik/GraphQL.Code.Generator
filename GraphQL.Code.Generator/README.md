@@ -1,3 +1,5 @@
+2.0.3 In Mutation Repository Update methods excluding Key field.
+
 2.0.2 Repository methods bool paramter bug fix.
 
 2.0.1 Added separate path for Stored Procedures and DB Context.
