@@ -1,3 +1,5 @@
+2.0.5 Separate the Log file location.
+
 2.0.4 In Mutation Repository Create methods return the object based on newly created entity key.
 
 2.0.3 In Mutation Repository Update methods excluding Key field.

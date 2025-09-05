@@ -101,176 +101,190 @@ namespace GraphQL.Code.Generator
 
         private static void AddStoredProceduresAsMutations(string assemblyNameAndPathAndExtension)
         {
-            assembly = Assembly.LoadFrom(assemblyNameAndPathAndExtension);
-            var types = assembly.GetTypes()
-                .Where(t =>
-                    (
-                        (Configuration.StoredProcedureAsMutation.IsDbContextBaseTypeNullAllowed && t.BaseType == null)
-                        || (!Configuration.StoredProcedureAsMutation.IsDbContextBaseTypeNullAllowed && t.BaseType != null
-                            && (
-                                (Configuration.StoredProcedureAsMutation.DdContextBaseClassInclude != null
-                                   && Configuration.StoredProcedureAsMutation.DdContextBaseClassInclude.IsMatch(t.BaseType.Name)
-                                   )
-                                || Configuration.StoredProcedureAsMutation.DdContextBaseClassInclude == null
-                                )
-                            && (
-                                (Configuration.StoredProcedureAsMutation.DdContextBaseClassExclude != null
-                                && !Configuration.StoredProcedureAsMutation.DdContextBaseClassExclude.IsMatch(t.BaseType.Name)
-                                )
-                                || Configuration.StoredProcedureAsMutation.DdContextBaseClassExclude == null
-                               )
-                             )
-                    )
-                    &&
-                    (
+            try
+            {
+                assembly = Assembly.LoadFrom(assemblyNameAndPathAndExtension);
+                var types = assembly.GetTypes()
+                    .Where(t =>
                         (
-                            (Configuration.StoredProcedureAsMutation.DdContextClassNameInclude != null
-                                && Configuration.StoredProcedureAsMutation.DdContextClassNameInclude.IsMatch(t.Name)
-                                )
-                            || Configuration.StoredProcedureAsMutation.DdContextClassNameInclude == null
+                            (Configuration.StoredProcedureAsMutation.IsDbContextBaseTypeNullAllowed && t.BaseType == null)
+                            || (!Configuration.StoredProcedureAsMutation.IsDbContextBaseTypeNullAllowed && t.BaseType != null
+                                && (
+                                    (Configuration.StoredProcedureAsMutation.DdContextBaseClassInclude != null
+                                       && Configuration.StoredProcedureAsMutation.DdContextBaseClassInclude.IsMatch(t.BaseType.Name)
+                                       )
+                                    || Configuration.StoredProcedureAsMutation.DdContextBaseClassInclude == null
+                                    )
+                                && (
+                                    (Configuration.StoredProcedureAsMutation.DdContextBaseClassExclude != null
+                                    && !Configuration.StoredProcedureAsMutation.DdContextBaseClassExclude.IsMatch(t.BaseType.Name)
+                                    )
+                                    || Configuration.StoredProcedureAsMutation.DdContextBaseClassExclude == null
+                                   )
+                                 )
                         )
                         &&
                         (
-                            (Configuration.StoredProcedureAsMutation.DdContextClassNameExclude != null
-                                && !Configuration.StoredProcedureAsMutation.DdContextClassNameExclude.IsMatch(t.Name)
-                                )
-                            || Configuration.StoredProcedureAsMutation.DdContextClassNameExclude == null
+                            (
+                                (Configuration.StoredProcedureAsMutation.DdContextClassNameInclude != null
+                                    && Configuration.StoredProcedureAsMutation.DdContextClassNameInclude.IsMatch(t.Name)
+                                    )
+                                || Configuration.StoredProcedureAsMutation.DdContextClassNameInclude == null
+                            )
+                            &&
+                            (
+                                (Configuration.StoredProcedureAsMutation.DdContextClassNameExclude != null
+                                    && !Configuration.StoredProcedureAsMutation.DdContextClassNameExclude.IsMatch(t.Name)
+                                    )
+                                || Configuration.StoredProcedureAsMutation.DdContextClassNameExclude == null
+                            )
                         )
-                    )
-                ).ToList();
+                    ).ToList();
 
-            foreach (var tc in types)
-            {
-                try
+                foreach (var tc in types)
                 {
-                    if (!generatedFilesLog.ContainsKey(tc.Name))
+                    try
                     {
-                        var logElement = new LogElement();
-                        generatedFilesLog.Add(tc.Name, logElement);
-                    }
+                        if (!generatedFilesLog.ContainsKey(tc.Name))
+                        {
+                            var logElement = new LogElement();
+                            generatedFilesLog.Add(tc.Name, logElement);
+                        }
 
-                    var methods = tc.GetMethods()
-                        .Where(m =>
-                            ( // Method Regex for Include Exclude Section
-                                (
-                                    (Configuration.StoredProcedureAsMutation.MethodInclude != null
-                                        && Configuration.StoredProcedureAsMutation.MethodInclude.IsMatch(m.Name)
-                                        )
-                                    || Configuration.StoredProcedureAsMutation.MethodInclude == null
+                        var methods = tc.GetMethods()
+                            .Where(m =>
+                                ( // Method Regex for Include Exclude Section
+                                    (
+                                        (Configuration.StoredProcedureAsMutation.MethodInclude != null
+                                            && Configuration.StoredProcedureAsMutation.MethodInclude.IsMatch(m.Name)
+                                            )
+                                        || Configuration.StoredProcedureAsMutation.MethodInclude == null
+                                    )
+                                    &&
+                                    (
+                                        (Configuration.StoredProcedureAsMutation.MethodExclude != null
+                                            && !Configuration.StoredProcedureAsMutation.MethodExclude.IsMatch(m.Name)
+                                            )
+                                        || Configuration.StoredProcedureAsMutation.MethodExclude == null
+                                    )
                                 )
                                 &&
-                                (
-                                    (Configuration.StoredProcedureAsMutation.MethodExclude != null
-                                        && !Configuration.StoredProcedureAsMutation.MethodExclude.IsMatch(m.Name)
-                                        )
-                                    || Configuration.StoredProcedureAsMutation.MethodExclude == null
-                                )
-                            )
-                            &&
-                            ( // Method Last Param Regex Section
-                                (
-                                    Configuration.StoredProcedureAsMutation.IgnoreMethodsWithLastOutParam
-                                    && !m.GetParameters().Last().IsOut
-                                    &&
+                                ( // Method Last Param Regex Section
                                     (
-                                        (Configuration.StoredProcedureAsMutation.LastOutParameterNameExclude != null
-                                            && !Configuration.StoredProcedureAsMutation.LastOutParameterNameExclude
-                                                .IsMatch(m.GetParameters().Last().Name)
-                                            )
-                                        || Configuration.StoredProcedureAsMutation.LastOutParameterNameExclude == null
-                                    )
-                                )
-                                || !Configuration.StoredProcedureAsMutation.IgnoreMethodsWithLastOutParam
-                            )
-                            &&
-                            ( // Method Return Type Regex section
-                                Configuration.StoredProcedureAsMutation.IsAnyMethodReturnTypeAllowed
-                                ||
-                                (
-                                    !Configuration.StoredProcedureAsMutation.IsAnyMethodReturnTypeAllowed
-                                    &&
-                                    (
-                                        (Configuration.StoredProcedureAsMutation.IsMethodReturnTypeBaseTypeNullAllowed
-                                        && (m.ReturnType == null || m.ReturnType.BaseType == null)
-                                        )
-                                        ||
+                                        Configuration.StoredProcedureAsMutation.IgnoreMethodsWithLastOutParam
+                                        && !m.GetParameters().Last().IsOut
+                                        &&
                                         (
-                                            !Configuration.StoredProcedureAsMutation.IsMethodReturnTypeBaseTypeNullAllowed
-                                            && m.ReturnType != null && m.ReturnType.BaseType != null
-                                            &&
+                                            (Configuration.StoredProcedureAsMutation.LastOutParameterNameExclude != null
+                                                && !Configuration.StoredProcedureAsMutation.LastOutParameterNameExclude
+                                                    .IsMatch(m.GetParameters().Last().Name)
+                                                )
+                                            || Configuration.StoredProcedureAsMutation.LastOutParameterNameExclude == null
+                                        )
+                                    )
+                                    || !Configuration.StoredProcedureAsMutation.IgnoreMethodsWithLastOutParam
+                                )
+                                &&
+                                ( // Method Return Type Regex section
+                                    Configuration.StoredProcedureAsMutation.IsAnyMethodReturnTypeAllowed
+                                    ||
+                                    (
+                                        !Configuration.StoredProcedureAsMutation.IsAnyMethodReturnTypeAllowed
+                                        &&
+                                        (
+                                            (Configuration.StoredProcedureAsMutation.IsMethodReturnTypeBaseTypeNullAllowed
+                                            && (m.ReturnType == null || m.ReturnType.BaseType == null)
+                                            )
+                                            ||
                                             (
-                                                (Configuration.StoredProcedureAsMutation.MethodReturnTypeBaseClassInclude != null
-                                                    && Configuration.StoredProcedureAsMutation.MethodReturnTypeBaseClassInclude
-                                                        .IsMatch(m.ReturnType.BaseType.Name)
-                                                    )
-                                                || Configuration.StoredProcedureAsMutation.MethodReturnTypeBaseClassInclude == null
+                                                !Configuration.StoredProcedureAsMutation.IsMethodReturnTypeBaseTypeNullAllowed
+                                                && m.ReturnType != null && m.ReturnType.BaseType != null
+                                                &&
+                                                (
+                                                    (Configuration.StoredProcedureAsMutation.MethodReturnTypeBaseClassInclude != null
+                                                        && Configuration.StoredProcedureAsMutation.MethodReturnTypeBaseClassInclude
+                                                            .IsMatch(m.ReturnType.BaseType.Name)
+                                                        )
+                                                    || Configuration.StoredProcedureAsMutation.MethodReturnTypeBaseClassInclude == null
+                                                )
                                             )
                                         )
                                     )
                                 )
-                            )
-                        ).ToList();
-                    var mutationTypeRepositoryMapping = new MutationTypeRepositoryMapping
-                    {
-                        IsStoredProcedure = true,
-                        InputTypeBaseEntityName = tc.Name,
-                        InputTypeBaseEntityFullName = tc.FullName,
-                        MutationFieldAndRepositoryMethodMappings = new List<MutationFieldAndRepositoryMethodMapping>()
-                    };
-                    Regex nullableParam = new Regex(pattern: @"^.*nullable.*$", RegexOptions.IgnoreCase);
-                    foreach (var m in methods)
-                    {
-                        try
+                            ).ToList();
+                        var mutationTypeRepositoryMapping = new MutationTypeRepositoryMapping
                         {
-                            if (!generatedFilesLog.ContainsKey(tc.Name + " => " + m.Name))
-                            {
-                                var logElement = new LogElement();
-                                generatedFilesLog.Add(tc.Name + " => " + m.Name, logElement);
-                            }
-
-                            var parameters = m.GetParameters();
-                            var mappingParameters = new List<MutationFieldParameterMapping>();
-                            foreach (var p in parameters)
-                            {
-                                mappingParameters.Add(new MutationFieldParameterMapping
-                                {
-                                    ParameterName = p.Name,
-                                    GraphQLParameterType = getGraphQLTypeFromDotNetType(p.ParameterType.GetUnderlyingType().Name),
-                                    RepositoryParameterName = p.Name,
-                                    CSharpParameterTypeName = p.ParameterType.GetUnderlyingType().Name
-                                        + (nullableParam.IsMatch(p.ParameterType.FullName) ? "?" : ""),
-                                    CSharpParameterTypeFullName = p.ParameterType.GetUnderlyingType().FullName
-                                        + (nullableParam.IsMatch(p.ParameterType.FullName) ? "?" : ""),
-                                    IsNullable = nullableParam.IsMatch(p.ParameterType.FullName)
-                                });
-                            }
-
-                            mutationTypeRepositoryMapping.MutationFieldAndRepositoryMethodMappings
-                                .Add(new MutationFieldAndRepositoryMethodMapping
-                                {
-                                    MutationFieldName = Utility.getCamelCaseString(m.Name),
-                                    MutationFieldReturnType = getGraphQLTypeFromDotNetType(m.ReturnType.Name),
-                                    RepositoryMethodName = m.Name,// Utility.getTitleCaseString(m.Name),
-                                    RepositoryMethodReturnTypeFullName = m.ReturnType.Name,
-                                    MappingParameters = mappingParameters,
-                                });
-
-                        }
-                        catch (Exception e)
+                            IsStoredProcedure = true,
+                            InputTypeBaseEntityName = tc.Name,
+                            InputTypeBaseEntityFullName = tc.FullName,
+                            MutationFieldAndRepositoryMethodMappings = new List<MutationFieldAndRepositoryMethodMapping>()
+                        };
+                        Regex nullableParam = new Regex(pattern: @"^.*nullable.*$", RegexOptions.IgnoreCase);
+                        foreach (var m in methods)
                         {
-                            var logEl = generatedFilesLog[tc.Name + " => " + m.Name];
-                            logEl.isException = true;
-                            logEl.exception = e;
+                            try
+                            {
+                                if (!generatedFilesLog.ContainsKey(tc.Name + " => " + m.Name))
+                                {
+                                    var logElement = new LogElement();
+                                    generatedFilesLog.Add(tc.Name + " => " + m.Name, logElement);
+                                }
+
+                                var parameters = m.GetParameters();
+                                var mappingParameters = new List<MutationFieldParameterMapping>();
+                                foreach (var p in parameters)
+                                {
+                                    mappingParameters.Add(new MutationFieldParameterMapping
+                                    {
+                                        ParameterName = p.Name,
+                                        GraphQLParameterType = getGraphQLTypeFromDotNetType(p.ParameterType.GetUnderlyingType().Name),
+                                        RepositoryParameterName = p.Name,
+                                        CSharpParameterTypeName = p.ParameterType.GetUnderlyingType().Name
+                                            + (nullableParam.IsMatch(p.ParameterType.FullName) ? "?" : ""),
+                                        CSharpParameterTypeFullName = p.ParameterType.GetUnderlyingType().FullName
+                                            + (nullableParam.IsMatch(p.ParameterType.FullName) ? "?" : ""),
+                                        IsNullable = nullableParam.IsMatch(p.ParameterType.FullName)
+                                    });
+                                }
+
+                                mutationTypeRepositoryMapping.MutationFieldAndRepositoryMethodMappings
+                                    .Add(new MutationFieldAndRepositoryMethodMapping
+                                    {
+                                        MutationFieldName = Utility.getCamelCaseString(m.Name),
+                                        MutationFieldReturnType = getGraphQLTypeFromDotNetType(m.ReturnType.Name),
+                                        RepositoryMethodName = m.Name,// Utility.getTitleCaseString(m.Name),
+                                        RepositoryMethodReturnTypeFullName = m.ReturnType.Name,
+                                        MappingParameters = mappingParameters,
+                                    });
+
+                            }
+                            catch (Exception e)
+                            {
+                                var logEl = generatedFilesLog[tc.Name + " => " + m.Name];
+                                logEl.isException = true;
+                                logEl.exception = e;
+                            }
                         }
+
+                        dicMutationTypeRepositoryMapping.Add(tc.Name, mutationTypeRepositoryMapping);
                     }
-
-                    dicMutationTypeRepositoryMapping.Add(tc.Name, mutationTypeRepositoryMapping);
+                    catch (Exception ex)
+                    {
+                        var logEl = generatedFilesLog[tc.Name];
+                        logEl.isException = true;
+                        logEl.exception = ex;
+                    }
                 }
-                catch (Exception ex)
+            }
+            catch (Exception ex)
+            {
+                if (!generatedFilesLog.ContainsKey("AddStoredProceduresAsMutations"))
                 {
-                    var logEl = generatedFilesLog[tc.Name];
-                    logEl.isException = true;
-                    logEl.exception = ex;
+                    var logElement = new LogElement();
+                    logElement.exception = ex;
+                    logElement.isException = true;
+                    logElement.message = ex.Message;
+                    generatedFilesLog.Add("AddStoredProceduresAsMutations", logElement);
                 }
             }
         }

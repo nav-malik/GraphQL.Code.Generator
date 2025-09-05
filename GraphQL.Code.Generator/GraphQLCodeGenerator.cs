@@ -1653,24 +1653,111 @@ namespace GraphQL.Code.Generator
                         dicQueryFieldNamesAndParamsListWithTypes = new Dictionary<string, QueryRepositoryMethodMapping>();
                         dicRepositoryMethodNamesAndParamsListWithTypes = new Dictionary<string, List<QueryParameterMapping>>();
                         dicRepositoryMethodsForLoader = new Dictionary<string, LoaderRepositoryMapping>();
-                        CreateTypeClasses(Configuration.InputDllNameAndPath, Configuration.TypeClasses.TypeClassesNamespace);
+                        try
+                        {
+                            CreateTypeClasses(Configuration.InputDllNameAndPath, Configuration.TypeClasses.TypeClassesNamespace);
+                        }
+                        catch (Exception ex) {
+                            generatedFilesLog.Add("CreateTypeClasses", new LogElement
+                            {
+                                exception = ex,
+                                isException = true,
+                            });
+                        }
                         if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.Repositoy))
-                            CreateRepositoryClass(Configuration.RepositoryClass.RepositoryClassesNamespace);
+                        {
+                            try
+                            {
+                                CreateRepositoryClass(Configuration.RepositoryClass.RepositoryClassesNamespace);
+                            }
+                            catch (Exception ex)
+                            {
+                                generatedFilesLog.Add("CreateRepositoryClass", new LogElement
+                                {
+                                    exception = ex,
+                                    isException = true,
+                                });
+                            }
+                        }
                         if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.Query))
-                            CreateQueryClass();
+                        {
+                            try
+                            {
+                                CreateQueryClass();
+                            }
+                            catch (Exception ex)
+                            {
+                                generatedFilesLog.Add("CreateQueryClass", new LogElement
+                                {
+                                    exception = ex,
+                                    isException = true,
+                                });
+                            }
+                        }
                     }
                     if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.MutationInputTypes)
                         || Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.Mutation)
                         || Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.MutationRepository)
                         || Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.StoredProcedureAsMutation))
                     {
-                        CreateMutationInputTypeClasses(Configuration.InputDllNameAndPath, Configuration.MutationInputTypeClasses.InputTypeClassesNamespace);
-                        if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.StoredProcedureAsMutation))
-                            AddStoredProceduresAsMutations(Configuration.StoredProcedureAsMutation.InputDllNameAndPath);
+                        try
+                        {
+                            CreateMutationInputTypeClasses(Configuration.InputDllNameAndPath, Configuration.MutationInputTypeClasses.InputTypeClassesNamespace);
+                        }
+                        catch (Exception ex)
+                        {
+                            generatedFilesLog.Add("CreateMutationInputTypeClasses", new LogElement
+                            {
+                                exception = ex,
+                                isException = true,
+                            });
+                        }
+                        if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.StoredProcedureAsMutation)
+                            &&
+                                (!string.IsNullOrWhiteSpace(Configuration.StoredProcedureAsMutation.InputDllNameAndPath)
+                                    || Configuration.StoredProcedureAsMutation.UseSamePathAsEntities
+                                )
+                            )
+                            try
+                            {
+                                AddStoredProceduresAsMutations(Configuration.StoredProcedureAsMutation.UseSamePathAsEntities
+                                    ? Configuration.InputDllNameAndPath :
+                                    Configuration.StoredProcedureAsMutation.InputDllNameAndPath);
+                            }
+                            catch (Exception ex)
+                            {
+                                generatedFilesLog.Add("AddStoredProceduresAsMutations", new LogElement
+                                {
+                                    exception = ex,
+                                    isException = true,
+                                });
+                            }
                         if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.Mutation))
-                            CreateMutationClass();
+                            try
+                            {
+                                CreateMutationClass();
+                            }
+                            catch (Exception ex)
+                            {
+                                generatedFilesLog.Add("CreateMutationClass", new LogElement
+                                {
+                                    exception = ex,
+                                    isException = true,
+                                });
+                            }
                         if (Configuration.ElementsToGenerate.HasFlag(Configuration.Elements.MutationRepository))
-                            CreateMutationRepositoryClass(Configuration.MutationRepositoryClass.RepositoryClassesNamespace);
+                            try
+                            {
+                                CreateMutationRepositoryClass(Configuration.MutationRepositoryClass.RepositoryClassesNamespace);
+                            }
+                            catch (Exception ex)
+                            {
+                                generatedFilesLog.Add("CreateMutationRepositoryClass", new LogElement
+                                {
+                                    exception = ex,
+                                    isException = true,
+                                });
+                            }
                     }
                 }
                 catch (Exception ex)
@@ -1678,11 +1765,11 @@ namespace GraphQL.Code.Generator
                     typeClassesException = ex;
                 }
 
-                string outputFileNameAndPath = Configuration.TypeClasses.Outputpath
+                string outputFileNameAndPath = Configuration.LogsOutputpath
                     + "\\Logs\\Log-GraphQL_Code_Generator_" + DateTime.Now.ToString("MM-dd-yyyy hh-mm-ss") + ".txt";
-                if (!System.IO.Directory.Exists(Configuration.TypeClasses.Outputpath + "\\Logs"))
+                if (!System.IO.Directory.Exists(Configuration.LogsOutputpath + "\\Logs"))
                 {
-                    System.IO.Directory.CreateDirectory(Configuration.TypeClasses.Outputpath + "\\Logs");
+                    System.IO.Directory.CreateDirectory(Configuration.LogsOutputpath + "\\Logs");
                 }
                 System.IO.FileInfo fileInfo = new FileInfo(outputFileNameAndPath);
                 if (!fileInfo.Exists)

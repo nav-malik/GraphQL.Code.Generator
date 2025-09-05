@@ -3,6 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Security.Cryptography;
 
 namespace GraphQL.Code.Generator
 {
@@ -51,6 +52,10 @@ namespace GraphQL.Code.Generator
         public static Regex ViewNameFilter = null;
         public static bool MakeAllFieldsOfViewNullable = true;
         public static ORMTypes ORMType = ORMTypes.EF6;
+
+        public static string LogsOutputpath = Path.GetDirectoryName(Path.GetDirectoryName(Directory.GetCurrentDirectory()))
+                + "/GraphQLTypes/";
+
         public static class TypeClasses
         {
             /// <summary>
@@ -263,6 +268,7 @@ namespace GraphQL.Code.Generator
         public static class StoredProcedureAsMutation
         {
             public static string InputDllNameAndPath = string.Empty;
+            public static bool UseSamePathAsEntities = false;
 
             public static bool IsDbContextBaseTypeNullAllowed = false;
             public static Regex DdContextBaseClassInclude = new Regex(pattern: @"^DbContext.*$", options: RegexOptions.IgnoreCase);

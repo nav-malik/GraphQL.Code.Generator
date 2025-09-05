@@ -8,14 +8,15 @@
     <Description>This package will generate GraphQL classes (Type, Query, Mutation, and Repository) dynamically from Domain Entity classes. Use the Configuration class and sub classes to provide the inputs to the Generator.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>GraphQL GraphQL.Code.Generator GraphQL-dotnet GraphQL.dotnet GraphQL-Schema GraphQL.Schema.Generator GraphQL.EnitityFramework GraphQLEntity GraphQL.Entity EnitityFramework.GraphQL Entity.GraphQL EntityGraphQL</PackageTags>
-    <PackageReleaseNotes>2.0.4 In Mutation Repository Create methods return the object based on newly created entity key.
+    <PackageReleaseNotes>2.0.5 Separate the Log file location.
+2.0.4 In Mutation Repository Create methods return the object based on newly created entity key.
 2.0.3 In Mutation Repository Update methods excluding Key field.
 2.0.2 Repository methods bool paramter bug fix.
 2.0.1 Added separate path for Stored Procedures and DB Context.
 2.0.0 Added Mutations Create, UpdateById, Update, DeleteById and Delete along with MutationInputTypes, CreateEntityInputType and UpdateEntityInputType. CreateInputType will have required fields as Non-Nullable while UpdateInputType will have all fields nullable.
 Added Mutation fields for Stored Procedures.
 Also, removed type: typeof(DateTimeGraphType) as its no longer needed and in GraphQL 9.x type will be removed from FieldBuilder.</PackageReleaseNotes>
-    <Version>2.0.4</Version>
+    <Version>2.0.5</Version>
     <PackageIcon>GraphQL-Icon.png</PackageIcon>
     <RepositoryUrl>https://github.com/nav-malik/GraphQL.Code.Generator</RepositoryUrl>
 	  <PackageReadmeFile>README.md</PackageReadmeFile>
