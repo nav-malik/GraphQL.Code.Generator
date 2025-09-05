@@ -1074,7 +1074,12 @@ namespace GraphQL.Code.Generator
 
                             if (Configuration.ORMType == Configuration.ORMTypes.EFCore)
                             {
-                                if (isUpdateByField)
+                                if (isCreateField)
+                                {
+                                    returnStatment += ".Where(x => x." + firstParam + " == " + inputTypeParam.RepositoryParameterName + "." + firstParam
+                                        + $"){tabs3}";
+                                }
+                                else if (isUpdateByField)
                                 {
                                     returnStatment += ".Where(x => x." + firstParam + " == " + keyParam.RepositoryParameterName
                                     + ")\r" + dicTabs["tab3"];
@@ -1089,10 +1094,13 @@ namespace GraphQL.Code.Generator
                             {
                                 returnStatment = $"\r{dicTabs["tab3"]}var res = this.{contextPrivateMemberName}.{m.Value.ContextProtpertyName}"
                                     + $"{tabs4}.AsNoTracking(){tabs4}";
-                                //returnStatment += ".Where(x => x." + firstParam + " == " + inputTypeParam.RepositoryParameterName + "." + firstParam
-                                //    + $"){tabs4}";
 
-                                if (isUpdateByField)
+                                if (isCreateField)
+                                {
+                                    returnStatment += ".Where(x => x." + firstParam + " == " + inputTypeParam.RepositoryParameterName + "." + firstParam
+                                        + $"){tabs4}";
+                                }
+                                else if (isUpdateByField)
                                 {
                                     returnStatment += ".Where(x => x." + firstParam + " == " + keyParam.RepositoryParameterName
                                     + ")\r" + dicTabs["tab4"];

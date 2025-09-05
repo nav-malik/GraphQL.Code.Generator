@@ -1,3 +1,5 @@
+2.0.4 In Mutation Repository Create methods return the object based on newly created entity key.
+
 2.0.3 In Mutation Repository Update methods excluding Key field.
 
 2.0.2 Repository methods bool paramter bug fix.
